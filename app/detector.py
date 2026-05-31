@@ -1,6 +1,7 @@
 import cv2
 import torch
 import numpy as np
+import os
 from ultralytics import YOLO
 
 class RoadVisionEngine:
@@ -8,6 +9,18 @@ class RoadVisionEngine:
                        stairs_model_path="models/stairs/stairs_yolov8_final.pt",
                        obstacle_model_path="yolov8n.pt"):
         print("Initializing RoadVision Engine (YOLO + MiDaS)...")
+        
+        def get_best_model_path(base_path):
+            if base_path.endswith('.pt'):
+                engine_path = base_path.replace('.pt', '.engine')
+                if os.path.exists(engine_path):
+                    print(f"🚀 Found optimized TensorRT engine: {engine_path}")
+                    return engine_path
+            return base_path
+
+        pothole_model_path = get_best_model_path(pothole_model_path)
+        stairs_model_path = get_best_model_path(stairs_model_path)
+        obstacle_model_path = get_best_model_path(obstacle_model_path)
         
         # Load YOLO models
         try:
@@ -27,11 +40,18 @@ class RoadVisionEngine:
             # Load MiDaS
             print("Loading MiDaS Depth Estimation model...")
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            self.midas = torch.hub.load("intel-isl/MiDaS", "MiDaS_small")
+            
+            # Use local cache for offline execution
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            cache_dir = os.path.join(base_dir, "models", "torch_hub_cache")
+            if os.path.exists(cache_dir):
+                torch.hub.set_dir(cache_dir)
+                
+            self.midas = torch.hub.load("intel-isl/MiDaS", "MiDaS_small", trust_repo=True)
             self.midas.to(self.device)
             self.midas.eval()
             
-            midas_transforms = torch.hub.load("intel-isl/MiDaS", "transforms")
+            midas_transforms = torch.hub.load("intel-isl/MiDaS", "transforms", trust_repo=True)
             self.transform = midas_transforms.small_transform
             
             print("✅ RoadVision Engine is Ready!")

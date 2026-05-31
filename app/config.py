@@ -1,7 +1,7 @@
 # Central configuration for the Vision + Voice AI Assistant
 
-CAMERA_0_INDEX = 0
-CAMERA_1_INDEX = 1
+CAMERA_0_INDEX = 1
+CAMERA_1_INDEX = 0
 FRAME_WIDTH = 480
 FRAME_HEIGHT = 360
 FPS = 30

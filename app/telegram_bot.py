@@ -9,6 +9,7 @@ import requests
 import threading
 import time
 import json
+import queue
 
 
 class TelegramBot:
@@ -22,6 +23,8 @@ class TelegramBot:
         self._arduino_reader = None
         self._last_detection = ""
         self._lock = threading.Lock()
+        self.message_queue = queue.Queue()
+        self._sender_thread = None
 
         # Verify bot connection
         self._verify_bot()
@@ -164,10 +167,19 @@ class TelegramBot:
         else:
             self.send_message(chat_id, "⚠️ الأردوينو غير متصل.")
 
-    # =================== Send Methods ===================
+    # =================== Send Methods (Asynchronous Queueing) ===================
 
     def send_message(self, chat_id, text, reply_markup=None):
-        """Send a text message."""
+        """Queue a text message to be sent asynchronously."""
+        self.message_queue.put({
+            "type": "message",
+            "chat_id": chat_id,
+            "text": text,
+            "reply_markup": reply_markup
+        })
+
+    def _execute_send_message(self, chat_id, text, reply_markup=None):
+        """Execute the actual API request to send a message."""
         try:
             payload = {
                 "chat_id": chat_id,
@@ -189,7 +201,16 @@ class TelegramBot:
             print(f"Telegram Bot: Send Exception - {e}")
 
     def send_location(self, chat_id, latitude, longitude):
-        """Send a GPS location pin."""
+        """Queue a GPS location pin to be sent asynchronously."""
+        self.message_queue.put({
+            "type": "location",
+            "chat_id": chat_id,
+            "latitude": latitude,
+            "longitude": longitude
+        })
+
+    def _execute_send_location(self, chat_id, latitude, longitude):
+        """Execute the actual API request to send location."""
         try:
             requests.post(
                 f"{self.base_url}/sendLocation",
@@ -214,7 +235,16 @@ class TelegramBot:
             self.send_location(chat_id, latitude, longitude)
 
     def send_photo(self, chat_id, photo_path, caption=None):
-        """Send a photo file to a chat."""
+        """Queue a photo file to be sent asynchronously."""
+        self.message_queue.put({
+            "type": "photo",
+            "chat_id": chat_id,
+            "photo_path": photo_path,
+            "caption": caption
+        })
+
+    def _execute_send_photo(self, chat_id, photo_path, caption=None):
+        """Execute the actual API request to send a photo."""
         try:
             with open(photo_path, "rb") as photo:
                 data = {"chat_id": chat_id}
@@ -299,6 +329,10 @@ class TelegramBot:
         self._running = True
         self._thread = threading.Thread(target=self._run_loop, daemon=True)
         self._thread.start()
+        
+        self._sender_thread = threading.Thread(target=self._sender_loop, daemon=True)
+        self._sender_thread.start()
+        
         print(f"Telegram Bot: Started (auto-send every {self.send_interval}s)")
 
     def stop(self):
@@ -306,7 +340,30 @@ class TelegramBot:
         self._running = False
         if self._thread:
             self._thread.join(timeout=5)
+        if self._sender_thread:
+            self._sender_thread.join(timeout=5)
         print("Telegram Bot: Stopped.")
+
+    def _sender_loop(self):
+        """Dedicated thread to process and send queued messages."""
+        while self._running:
+            try:
+                task = self.message_queue.get(timeout=1)
+                self._process_task(task)
+                self.message_queue.task_done()
+            except queue.Empty:
+                pass
+            except Exception as e:
+                print(f"Telegram Bot: Sender loop error - {e}")
+
+    def _process_task(self, task):
+        task_type = task.get("type")
+        if task_type == "message":
+            self._execute_send_message(task["chat_id"], task["text"], task.get("reply_markup"))
+        elif task_type == "location":
+            self._execute_send_location(task["chat_id"], task["latitude"], task["longitude"])
+        elif task_type == "photo":
+            self._execute_send_photo(task["chat_id"], task["photo_path"], task.get("caption"))
 
     def _run_loop(self):
         """Main loop: check messages, send periodic data."""

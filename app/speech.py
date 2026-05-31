@@ -66,18 +66,19 @@ class SpeechEngine:
                 self._is_speaking = False
 
     def _speak_gtts(self, text):
-        """Use Google TTS for high-quality Arabic speech with caching."""
-        from gtts import gTTS
-        
+        """Use Google TTS offline cache for high-quality Arabic speech."""
         cache_path = self._get_cache_path(text)
         
-        # Generate audio only if not cached
+        # Check if the specific phrase was pre-generated
         if not os.path.exists(cache_path):
-            try:
-                tts = gTTS(text, lang="ar")
-                tts.save(cache_path)
-            except Exception as e:
-                print(f"gTTS generation failed: {e}, falling back to spd-say")
+            print(f"SpeechEngine Warning: '{text}' not found in offline cache.")
+            # Fallback to a generic warning that is guaranteed to be cached
+            fallback_text = "انتبه أمامك"
+            cache_path = self._get_cache_path(fallback_text)
+            
+            if not os.path.exists(cache_path):
+                # If even fallback is missing (user forgot to run pregenerate_speech.py)
+                print("SpeechEngine Critical: No offline cache found! Run scripts/pregenerate_speech.py")
                 self._speak_spd(text)
                 return
         

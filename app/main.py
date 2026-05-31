@@ -1,6 +1,11 @@
 import cv2
 import time
 import os
+import sys
+
+# Add project root to sys.path to allow running 'python3 app/main.py' directly
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from app import config
 from app.cameras import open_camera, read_frame, release_all
 from app.detector import RoadVisionEngine
