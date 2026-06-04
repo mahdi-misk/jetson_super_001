@@ -1,6 +1,7 @@
 import cv2
 import subprocess
 import os
+import time
 from flask import Flask, jsonify, Response, request, redirect
 from app import config
 
@@ -218,13 +219,22 @@ def generate_frames():
     global latest_frame
     while True:
         if latest_frame is None:
+            time.sleep(0.1)
             continue
-        ret, buffer = cv2.imencode('.jpg', latest_frame)
+        
+        # Keep a reference to the frame to encode
+        frame_to_encode = latest_frame
+        ret, buffer = cv2.imencode('.jpg', frame_to_encode)
         if not ret:
+            time.sleep(0.1)
             continue
+            
         frame_bytes = buffer.tobytes()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+               
+        # Limit to ~15 FPS to save CPU and Network bandwidth
+        time.sleep(0.06)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ROUTE: Main Dashboard
@@ -330,10 +340,7 @@ def index():
                             <span style="color:var(--text-dim)">IP</span>
                             <span id="conn-ip" style="font-weight:600; font-size:0.85em; direction:ltr">—</span>
                         </div>
-                        <div class="conn-row">
-                            <span style="color:var(--text-dim)">Hotspot</span>
-                            <span id="conn-hotspot" class="badge badge-info">...</span>
-                        </div>
+
                     </div>
 
                     <div class="card stat-card">
@@ -364,7 +371,7 @@ def index():
             <script>
                 function updateDashboard() {{
                     fetch('/api/status').then(r => r.json()).then(data => {{
-                        document.getElementById('ph-count').innerText = data.pothole_detections;
+                        if(document.getElementById('ph-count')) document.getElementById('ph-count').innerText = data.pothole_detections;
                         const modelBadge = document.getElementById('ph-model-badge');
                         if (data.pothole_model_loaded) {{
                             modelBadge.className = 'model-status loaded';
@@ -381,8 +388,6 @@ def index():
                         document.getElementById('conn-internet').innerHTML = c.internet ? '<span class="dot-live" style="background:var(--success)"></span> متصل' : '❌ غير متصل';
                         document.getElementById('conn-ssid').innerText = c.current_ssid || '—';
                         document.getElementById('conn-ip').innerText = c.ip_address || '—';
-                        document.getElementById('conn-hotspot').className = 'badge ' + (c.hotspot_active ? 'badge-warning' : 'badge-info');
-                        document.getElementById('conn-hotspot').innerText = c.hotspot_active ? '📡 شغال' : '⏸️ متوقف';
                     }}).catch(() => {{}});
                 }}
                 updateDashboard();
@@ -460,10 +465,9 @@ def setup_page():
                     box.innerHTML = `<div class="current-net">
                         <strong>✅ متصل بـ: ${{c.current_ssid}}</strong>
                         <span style="margin-right:16px; color:var(--text-dim); font-size:0.85em">IP: ${{c.ip_address}}</span>
-                        ${{c.hotspot_active ? '<span class="badge badge-warning" style="margin-right:8px">📡 Hotspot شغال</span>' : ''}}
                     </div>`;
-                }} else if (c.hotspot_active) {{
-                    box.innerHTML = '<div class="current-net" style="background:var(--warning-dim);border-color:rgba(254,202,87,0.3)"><strong>📡 وضع نقطة الاتصال (Jetson-Setup)</strong></div>';
+                }} else {{
+                    box.innerHTML = '<div class="current-net" style="background:var(--danger-dim);border-color:rgba(255,107,107,0.3)"><strong>❌ غير متصل بأي شبكة</strong></div>';
                 }}
             }});
 
@@ -842,7 +846,7 @@ def api_status():
 def api_connection():
     if nm:
         return jsonify(nm.connection_state)
-    return jsonify({"internet": False, "hotspot_active": False, "current_ssid": "", "ip_address": ""})
+    return jsonify({"internet": False, "current_ssid": "", "ip_address": ""})
 
 @app.route("/api/wifi/scan")
 def api_wifi_scan():
@@ -956,7 +960,31 @@ def api_events_clear():
 def page_not_found(e):
     return redirect("/setup")
 
+def _free_port(port):
+    """Kill any process occupying the given port before starting the server."""
+    try:
+        import signal
+        result = subprocess.check_output(
+            ["lsof", "-t", "-i", f":{port}"],
+            text=True, stderr=subprocess.DEVNULL
+        ).strip()
+        if result:
+            for pid_str in result.split('\n'):
+                pid = int(pid_str)
+                # Don't kill ourselves
+                if pid != os.getpid():
+                    try:
+                        os.kill(pid, signal.SIGKILL)
+                        print(f"Web Dashboard: Killed old process {pid} on port {port}")
+                    except ProcessLookupError:
+                        pass
+            time.sleep(0.5)
+    except (subprocess.CalledProcessError, Exception):
+        # No process on the port, or lsof not available — safe to continue
+        pass
+
 def run_server():
+    _free_port(config.WEB_PORT)
     app.run(host="0.0.0.0", port=config.WEB_PORT, debug=False, use_reloader=False)
 
 if __name__ == "__main__":

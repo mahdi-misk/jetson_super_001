@@ -84,7 +84,12 @@ COCO_ARABIC = {
     "downstairs": "درج نازل",
     "stairs": "درج",
     "pothole": "حفرة",
+    "potholes": "حفرة",
+    "hole": "حفرة",
 }
 
 def translate_label(label):
-    return COCO_ARABIC.get(label.lower(), label)
+    l = label.lower()
+    if "pothole" in l or "hole" in l:
+        return "حفرة"
+    return COCO_ARABIC.get(l, label)

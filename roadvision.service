@@ -1,0 +1,17 @@
+[Unit]
+Description=RoadVision AI Assistant Service
+After=network.target network-online.target nvargus-daemon.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mahdi
+WorkingDirectory=/home/mahdi/jetson_super_001
+Environment="DISPLAY=:0"
+Environment="WAYLAND_DISPLAY=wayland-0"
+ExecStart=/usr/bin/python3 app/main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

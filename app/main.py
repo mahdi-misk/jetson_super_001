@@ -27,8 +27,7 @@ def main():
         if not nm.check_internet():
             print("No internet. Trying last known Wi-Fi...")
             if not nm.try_last_wifi():
-                print("Could not connect to last Wi-Fi. Starting Hotspot mode...")
-                nm.start_hotspot()
+                print("Could not connect to last Wi-Fi. Will keep retrying in background...")
         else:
             print("Internet connection is active.")
         # Start auto-recovery monitor (checks every 30 seconds)
@@ -70,7 +69,17 @@ def main():
 
     if telegram:
         telegram.start()
-        telegram.broadcast("🟢 *النظام يعمل الآن!*\nأرسل /help لعرض الأوامر.")
+        
+        # Build startup message
+        msg = "🟢 *System is now running!*\n"
+        if nm:
+            ip = nm.get_ip_address()
+            msg += f"🌐 Dashboard (IP): http://{ip}:{config.WEB_PORT}\n"
+            msg += f"🔗 Dashboard (Fixed): http://jetson.local:{config.WEB_PORT}\n"
+        
+        msg += "Send /help to view commands."
+
+        telegram.broadcast(msg)
     
     cameras = []
     
@@ -94,7 +103,89 @@ def main():
     web_dashboard.system_state["pothole_model_loaded"] = True
     threading.Thread(target=web_dashboard.run_server, daemon=True).start()
     
+    # --- AI Background Thread ---
+    latest_raw_frame = None
+    latest_detections = []
+    ai_processing = False
+    
+    def ai_worker():
+        nonlocal latest_raw_frame, latest_detections, ai_processing
+        last_vibration_state = None
+        while True:
+            if latest_raw_frame is not None and not ai_processing:
+                ai_processing = True
+                frame_to_process = latest_raw_frame.copy()
+                
+                # Run RoadVision Unified Detection (blocks)
+                try:
+                    detections = detector.detect(frame_to_process)
+                except Exception as e:
+                    print(f"AI Error: {e}")
+                    detections = []
+                
+                hazard_detected = False
+                vibration_triggered = False
+                
+                # To collect items for speech
+                speech_objects = set()
+                hazard_objects = set()
+                
+                for det in detections:
+                    label_eng = det["label"]
+                    label_ar = translate_label(label_eng)
+                    distance = det["distance"]
+                    state = det["state"]
+                    is_hazard = det["is_hazard"]
+                    bbox = det["bbox"]
+                    direction = get_direction(bbox, frame_to_process.shape[1])
+                    
+                    severity_ar = det.get("severity_ar", "")
+                    
+                    # Add label and direction for speech (all objects)
+                    obj_desc = f"{label_ar} {severity_ar} {direction}".strip()
+                    speech_objects.add(obj_desc)
+                    
+                    if is_hazard and state in ["DANGER", "WARNING"]:
+                        hazard_detected = True
+                        vibration_triggered = True
+                        hazard_objects.add(obj_desc)
+                        if telegram:
+                            telegram.broadcast(f"⚠️ *تنبيه خطر!*\nالنوع: *{label_ar} {severity_ar}*\nالمسافة: *{distance:.1f} متر* ({state})\n⏰ {time.strftime('%H:%M:%S')}")
+                    elif state == "DANGER":
+                        hazard_detected = True # Treat any close object as a hazard for speech
+                        vibration_triggered = True
+                        hazard_objects.add(obj_desc)
+                        if telegram:
+                            telegram.broadcast(f"⚠️ *تنبيه اقتراب!*\nالنوع: *{label_ar} {severity_ar}*\nالمسافة: *{distance:.1f} متر* ({state})\n⏰ {time.strftime('%H:%M:%S')}")
+                
+                # Update shared state
+                latest_detections = detections
+                
+                # Control vibration
+                if arduino:
+                    if vibration_triggered != last_vibration_state:
+                        if vibration_triggered:
+                            arduino.vibration_on()
+                        else:
+                            arduino.vibration_off()
+                        last_vibration_state = vibration_triggered
+                
+                # Speech Generation
+                if hazard_objects:
+                    hazards_str = " و ".join(list(hazard_objects)[:2])
+                    speech_engine.speak(f"تحذير! {hazards_str}!")
+                elif speech_objects:
+                    objects_str = " و ".join(list(speech_objects)[:3])
+                    speech_text = f"أرى {objects_str}."
+                    speech_engine.speak(speech_text)
+                
+                ai_processing = False
+            time.sleep(0.01)
+
+    threading.Thread(target=ai_worker, daemon=True).start()
+
     try:
+        print("Press CTRL+C to quit")
         while True:
             for idx, cap in enumerate(cameras):
                 ret, frame = read_frame(cap)
@@ -102,80 +193,37 @@ def main():
                     continue
                 
                 if idx == 0:
-                    # Run RoadVision Unified Detection
-                    detections = detector.detect(frame)
+                    latest_raw_frame = frame.copy()
                     
-                    detected_labels = set()
-                    hazard_detected = False
-                    
-                    for det in detections:
-                        label_eng = det["label"]
-                        label_ar = translate_label(label_eng)
-                        conf = det["confidence"]
-                        bbox = det["bbox"]
-                        distance = det["distance"]
-                        state = det["state"]
+                    # Draw latest_detections on the CURRENT frame (smooth 30fps)
+                    for det in latest_detections:
                         color = det["color"]
-                        is_hazard = det["is_hazard"]
-                        
-                        x1, y1, x2, y2 = bbox
-                        
-                        direction = get_direction(bbox, frame.shape[1])
-                        
-                        # Add label and direction for speech
-                        detected_labels.add(f"{label_ar} {direction}")
-                        
-                        # Trigger alerts for hazards in DANGER or WARNING
-                        if is_hazard and (state == "DANGER" or state == "WARNING"):
-                            hazard_detected = True
-                            if arduino:
-                                arduino.pothole_alert() # triggers buzzer/vibration
-                            if telegram:
-                                telegram.broadcast(
-                                    f"⚠️ *تنبيه خطر!*\n"
-                                    f"النوع: *{label_ar}*\n"
-                                    f"المسافة: *{distance:.1f} متر* ({state})\n"
-                                    f"⏰ {time.strftime('%H:%M:%S')}"
-                                )
-                        
-                        # Draw bounding box and label
+                        x1, y1, x2, y2 = det["bbox"]
                         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                         
-                        text = f"{label_eng} | {state} | {distance:.1f}m"
+                        conf_percent = int(det['confidence'] * 100)
+                        text = f"{det['label']} {conf_percent}% | {det['state']} | {det['distance']:.1f}m"
                         font = cv2.FONT_HERSHEY_SIMPLEX
                         (tw, th), _ = cv2.getTextSize(text, font, 0.5, 2)
-                        # Draw text background INSIDE the box (top-inside)
                         cv2.rectangle(frame, (x1, y1), (x1 + tw + 4, y1 + th + 8), color, -1)
-                        
-                        # Text color black for better contrast on colored backgrounds
                         cv2.putText(frame, text, (x1 + 2, y1 + th + 4), font, 0.5, (0, 0, 0), 2)
                     
-                    # Generate speech message for hazards
-                    if hazard_detected:
-                        speech_engine.speak("تحذير! انتبه أمامك!")
-                    elif detected_labels:
-                        objects_str = " و ".join(list(detected_labels)[:3]) # Limit to 3 items
-                        speech_text = f"أرى {objects_str}."
-                        speech_engine.speak(speech_text)
-                    
-                    # Update Web Dashboard frame
-                    web_dashboard.latest_frame = frame.copy()
+                    # Update Web Dashboard frame smoothly
+                    web_dashboard.latest_frame = frame
                 
-                # Display the frame if requested
                 if config.DISPLAY_ON_JETSON:
                     try:
                         cv2.imshow("RoadVision-AI", frame)
                     except cv2.error:
                         config.DISPLAY_ON_JETSON = False
-                        print("Display not available (headless mode). Running without GUI.")
-            
+                        
             if config.DISPLAY_ON_JETSON:
                 key = cv2.waitKey(1) & 0xFF
-                if key == 27: # ESC key
+                if key == 27:
                     print("ESC pressed. Exiting...")
                     break
             else:
-                time.sleep(0.01)
+                time.sleep(0.03) # Cap loop to ~30 FPS
                 
     except KeyboardInterrupt:
         print("Keyboard interrupt received. Exiting...")
@@ -187,7 +235,7 @@ def main():
         if arduino:
             arduino.stop()
         if telegram:
-            telegram.broadcast("🔴 *النظام توقف.*")
+            telegram.broadcast("🔴 *System stopped.*")
             time.sleep(1)
             telegram.stop()
 

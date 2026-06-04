@@ -8,7 +8,7 @@ def gstreamer_pipeline(
     capture_height=720,
     display_width=640,
     display_height=480,
-    framerate=60,
+    framerate=30,
     flip_method=2,
 ):
     return (
@@ -86,7 +86,7 @@ def open_camera(index, width, height, fps):
         capture_height=720,
         display_width=width,
         display_height=height,
-        framerate=60
+        framerate=fps
     )
     
     cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)

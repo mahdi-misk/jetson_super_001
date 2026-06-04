@@ -15,7 +15,6 @@ LAST_WIFI_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__
 # Shared state for dashboard widgets
 connection_state = {
     "internet": False,
-    "hotspot_active": False,
     "current_ssid": "",
     "ip_address": "",
 }
@@ -35,6 +34,14 @@ def check_internet(host="8.8.8.8", timeout=3):
     except subprocess.CalledProcessError:
         return False
 
+def get_wifi_interface():
+    """Dynamically get the Wi-Fi interface name."""
+    try:
+        output = subprocess.check_output(["nmcli", "-t", "-f", "DEVICE,TYPE", "dev"], universal_newlines=True)
+        return next((line.split(':')[0] for line in output.split('\n') if line.endswith(':wifi')), "wlan0")
+    except Exception:
+        return "wlan0"
+
 def get_current_ssid():
     """Get the currently connected Wi-Fi SSID."""
     try:
@@ -50,79 +57,34 @@ def get_current_ssid():
     return ""
 
 def get_ip_address():
-    """Get the current IP address of wlan0."""
+    """Get the current IP address of the active Wi-Fi interface."""
     try:
+        iface = get_wifi_interface()
         output = subprocess.check_output(
-            ["hostname", "-I"],
+            ["nmcli", "-t", "-f", "IP4.ADDRESS", "dev", "show", iface],
             universal_newlines=True
         ).strip()
+        if output:
+            return output.split('\n')[0].split('/')[0]
+    except Exception:
+        pass
+    
+    # Fallback
+    try:
+        output = subprocess.check_output(["hostname", "-I"], universal_newlines=True).strip()
         if output:
             return output.split()[0]
     except Exception:
         pass
     return "N/A"
 
-def is_hotspot_active():
-    """Check if Jetson-Setup hotspot is currently active."""
-    try:
-        output = subprocess.check_output(
-            ["nmcli", "-t", "-f", "NAME,TYPE,STATE", "con", "show", "--active"],
-            universal_newlines=True
-        )
-        for line in output.strip().split('\n'):
-            if "Jetson-Setup" in line and "activated" in line.lower():
-                return True
-    except Exception:
-        pass
-    return False
-
 def _update_state():
     """Update the shared connection state."""
     connection_state["internet"] = check_internet()
-    connection_state["hotspot_active"] = is_hotspot_active()
     connection_state["current_ssid"] = get_current_ssid()
     connection_state["ip_address"] = get_ip_address()
 
-def start_hotspot():
-    """Start an open Wi-Fi hotspot named Jetson-Setup."""
-    try:
-        # Check if Hotspot connection already exists
-        output = subprocess.check_output(["nmcli", "-t", "-f", "NAME", "con", "show"]).decode()
-        if "Jetson-Setup" in output:
-            print("Bringing up existing Jetson-Setup hotspot...")
-            subprocess.run(["nmcli", "con", "up", "Jetson-Setup"], check=True)
-        else:
-            print("Creating new open Hotspot Jetson-Setup...")
-            subprocess.run([
-                "nmcli", "con", "add", "type", "wifi", "ifname", "wlan0",
-                "con-name", "Jetson-Setup", "autoconnect", "no", "ssid", "Jetson-Setup"
-            ], check=True)
-            
-            subprocess.run([
-                "nmcli", "con", "modify", "Jetson-Setup",
-                "802-11-wireless.mode", "ap",
-                "802-11-wireless.band", "bg",
-                "ipv4.method", "shared"
-            ], check=True)
-            
-            subprocess.run(["nmcli", "con", "up", "Jetson-Setup"], check=True)
-        
-        connection_state["hotspot_active"] = True
-        log_event("network", "تم تشغيل نقطة الاتصال Jetson-Setup", "success")
-        return True
-    except subprocess.CalledProcessError as e:
-        log_event("network", f"فشل تشغيل نقطة الاتصال: {e}", "error")
-        print(f"Failed to start hotspot: {e}")
-        return False
 
-def stop_hotspot():
-    """Stop the Hotspot connection if running."""
-    try:
-        subprocess.run(["nmcli", "con", "down", "Jetson-Setup"], check=True)
-        connection_state["hotspot_active"] = False
-        log_event("network", "تم إيقاف نقطة الاتصال", "info")
-    except Exception:
-        pass
 
 def save_last_wifi(ssid, password=None):
     """Save last successful Wi-Fi credentials."""
@@ -151,13 +113,13 @@ def try_last_wifi():
         password = last.get("password")
         if ssid:
             print(f"Trying last known Wi-Fi: {ssid}...")
-            log_event("network", f"محاولة الاتصال بآخر شبكة: {ssid}", "info")
+            log_event("network", f"Attempting to connect to last network: {ssid}", "info")
             result = connect_wifi(ssid, password if password else None, save=False)
             if result.get("success"):
-                log_event("network", f"تم الاتصال بآخر شبكة محفوظة: {ssid}", "success")
+                log_event("network", f"Connected to last saved network: {ssid}", "success")
                 return True
             else:
-                log_event("network", f"فشل الاتصال بآخر شبكة: {ssid}", "warning")
+                log_event("network", f"Failed to connect to last network: {ssid}", "warning")
     return False
 
 def scan_wifi():
@@ -178,7 +140,7 @@ def scan_wifi():
             parts = line.split(':')
             if len(parts) >= 3:
                 ssid = parts[0]
-                if not ssid or ssid == "--" or ssid == "Jetson-Setup":
+                if not ssid or ssid == "--":
                     continue
                 
                 if ssid not in seen_ssids:
@@ -198,9 +160,6 @@ def scan_wifi():
 def connect_wifi(ssid, password=None, save=True):
     """Connect to a Wi-Fi network."""
     try:
-        stop_hotspot()
-        time.sleep(1)
-        
         cmd = ["nmcli", "dev", "wifi", "connect", ssid]
         if password:
             cmd.extend(["password", password])
@@ -209,21 +168,27 @@ def connect_wifi(ssid, password=None, save=True):
         if result.returncode == 0:
             if save:
                 save_last_wifi(ssid, password)
-            log_event("network", f"تم الاتصال بشبكة {ssid}", "success")
+            log_event("network", f"Connected to network {ssid}", "success")
             _update_state()
-            return {"success": True, "message": f"تم الاتصال بنجاح بشبكة {ssid}"}
+            return {"success": True, "message": f"Successfully connected to network {ssid}"}
         else:
-            log_event("network", f"فشل الاتصال بشبكة {ssid}: {result.stderr or result.stdout}", "error")
-            return {"success": False, "message": f"فشل الاتصال: {result.stderr or result.stdout}"}
+            log_event("network", f"Failed to connect to network {ssid}: {result.stderr or result.stdout}", "error")
+            return {"success": False, "message": f"Failed to connect: {result.stderr or result.stdout}"}
     except Exception as e:
         return {"success": False, "message": str(e)}
 
 def _monitor_loop(check_interval=30):
-    """Background thread that periodically checks internet and auto-recovers."""
+    """Background thread that periodically checks internet and auto-recovers via saved WiFi."""
     global _monitor_running
     _monitor_running = True
     was_connected = check_internet()
     
+    # If starting without internet, try to connect to saved WiFi
+    if not was_connected:
+        log_event("network", "No internet on startup. Trying saved WiFi...", "warning")
+        print("[Auto-Recovery] No internet on startup! Trying saved WiFi...")
+        try_last_wifi()
+        
     while _monitor_running:
         time.sleep(check_interval)
         if not _monitor_running:
@@ -232,18 +197,16 @@ def _monitor_loop(check_interval=30):
         currently_connected = check_internet()
         _update_state()
         
-        # Lost internet
+        # Lost internet - try to reconnect to saved WiFi
         if was_connected and not currently_connected:
-            log_event("network", "انقطع الاتصال بالإنترنت!", "warning")
-            print("[Auto-Recovery] Internet lost! Starting hotspot...")
-            start_hotspot()
+            log_event("network", "Internet connection lost! Trying to reconnect...", "warning")
+            print("[Auto-Recovery] Internet lost! Trying saved WiFi...")
+            try_last_wifi()
         
         # Regained internet
         elif not was_connected and currently_connected:
-            log_event("network", "تم استعادة الاتصال بالإنترنت!", "success")
+            log_event("network", "Internet connection restored!", "success")
             print("[Auto-Recovery] Internet restored!")
-            if is_hotspot_active():
-                stop_hotspot()
         
         was_connected = currently_connected
 
@@ -255,7 +218,7 @@ def start_monitor(check_interval=30):
     _update_state()
     _monitor_thread = threading.Thread(target=_monitor_loop, args=(check_interval,), daemon=True)
     _monitor_thread.start()
-    log_event("system", "تم تشغيل مراقب الاتصال التلقائي", "info")
+    log_event("system", "Auto-connection monitor started", "info")
     print("[Auto-Recovery] Monitor started.")
 
 def stop_monitor():

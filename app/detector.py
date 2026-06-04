@@ -6,7 +6,7 @@ from ultralytics import YOLO
 
 class RoadVisionEngine:
     def __init__(self, pothole_model_path="models/pothole/pothole_yolov8_final.onnx",
-                       stairs_model_path="models/stairs/stairs_yolov8_final.onnx",
+                       stairs_model_path="models/stairs/stairs_yolov8.pt",
                        obstacle_model_path="yolov8n.pt"):
         print("Initializing RoadVision Engine (YOLO + MiDaS)...")
         
@@ -88,6 +88,10 @@ class RoadVisionEngine:
                 cls_id = int(box.cls[0])
                 label = results[0].names[cls_id]
 
+                # Specific confidence threshold for handrail
+                if label == "handrail" and conf < 0.80:
+                    continue
+
                 # Bounding box depth
                 bx1, by1 = max(0, x1), max(0, y1)
                 bx2, by2 = min(depth_map.shape[1], x2), min(depth_map.shape[0], y2)
@@ -97,7 +101,12 @@ class RoadVisionEngine:
                     continue
                 
                 median_inverse_depth = np.median(box_depth_values)
-                simulated_distance = 5000.0 / median_inverse_depth if median_inverse_depth > 0 else 99.9
+                
+                # Import config inside function if needed or at top, wait, I'll just use config.DEPTH_SCALE_FACTOR
+                # I should import config at the top
+                from app import config
+                
+                simulated_distance = config.DEPTH_SCALE_FACTOR / median_inverse_depth if median_inverse_depth > 0 else 99.9
 
                 # Determine Safety State
                 if simulated_distance > 5.0:
@@ -110,6 +119,17 @@ class RoadVisionEngine:
                     state = "DANGER"
                     color = (0, 0, 255) # Red
 
+                severity_ar = ""
+                if "pothole" in label.lower():
+                    std_depth = float(np.std(box_depth_values))
+                    relative_std = std_depth / (median_inverse_depth + 1e-6)
+                    if relative_std > 0.25:
+                        severity_ar = "عميقة"
+                    elif relative_std > 0.10:
+                        severity_ar = "متوسطة"
+                    else:
+                        severity_ar = "عادية"
+
                 all_detections.append({
                     "label": label,
                     "confidence": conf,
@@ -117,13 +137,14 @@ class RoadVisionEngine:
                     "distance": simulated_distance,
                     "state": state,
                     "color": color,
+                    "severity_ar": severity_ar,
                     "is_hazard": is_hazard # Flag for critical objects like potholes/stairs
                 })
 
         # 2. Run YOLO Inferences
-        pothole_results = self.pothole_model.predict(source=frame, conf=0.5, verbose=False)
-        stairs_results = self.stairs_model.predict(source=frame, conf=0.5, verbose=False)
-        obstacle_results = self.obstacle_model.predict(source=frame, conf=0.6, verbose=False)
+        pothole_results = self.pothole_model.predict(source=frame, conf=0.45, verbose=False)
+        stairs_results = self.stairs_model.predict(source=frame, conf=0.45, verbose=False)
+        obstacle_results = self.obstacle_model.predict(source=frame, conf=0.45, verbose=False)
 
         process_results(pothole_results, is_hazard=True)
         process_results(stairs_results, is_hazard=True)

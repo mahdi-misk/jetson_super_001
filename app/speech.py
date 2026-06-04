@@ -17,6 +17,8 @@ class SpeechEngine:
         # Create cache directory
         os.makedirs(CACHE_DIR, exist_ok=True)
         
+        self._set_default_audio_sink()
+        
         # Try to import gTTS
         try:
             from gtts import gTTS
@@ -25,6 +27,34 @@ class SpeechEngine:
         except ImportError:
             self._gtts_available = False
             print("SpeechEngine: gTTS not found, falling back to spd-say")
+
+    def _set_default_audio_sink(self):
+        """Set the default audio sink to Bluetooth (if available) or USB Audio."""
+        try:
+            output = subprocess.check_output(["pactl", "list", "short", "sinks"], universal_newlines=True)
+            sinks = [line.split('\t')[1] for line in output.strip().split('\n') if line]
+            
+            target_sink = None
+            # Priority 1: Bluetooth (bluez)
+            for s in sinks:
+                if 'bluez_sink' in s:
+                    target_sink = s
+                    break
+            
+            # Priority 2: USB Audio (often used for bluetooth dongles)
+            if not target_sink:
+                for s in sinks:
+                    if 'usb' in s:
+                        target_sink = s
+                        break
+                        
+            if target_sink:
+                subprocess.run(["pactl", "set-default-sink", target_sink], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                print(f"SpeechEngine: Auto-configured default audio output to {target_sink}")
+            else:
+                print("SpeechEngine: No Bluetooth/USB sink found. Using default audio output.")
+        except Exception as e:
+            print(f"SpeechEngine: Error setting default sink: {e}")
 
     def speak(self, text):
         current_time = time.time()
@@ -66,29 +96,36 @@ class SpeechEngine:
                 self._is_speaking = False
 
     def _speak_gtts(self, text):
-        """Use Google TTS offline cache for high-quality Arabic speech."""
+        """Use Google TTS for high-quality Arabic speech with dynamic caching."""
+        from gtts import gTTS
+        
         cache_path = self._get_cache_path(text)
         
-        # Check if the specific phrase was pre-generated
+        # Generate audio only if not cached
         if not os.path.exists(cache_path):
-            print(f"SpeechEngine Warning: '{text}' not found in offline cache.")
-            # Fallback to a generic warning that is guaranteed to be cached
-            fallback_text = "انتبه أمامك"
-            cache_path = self._get_cache_path(fallback_text)
-            
-            if not os.path.exists(cache_path):
-                # If even fallback is missing (user forgot to run pregenerate_speech.py)
-                print("SpeechEngine Critical: No offline cache found! Run scripts/pregenerate_speech.py")
+            print(f"SpeechEngine: Generating audio for '{text}'...")
+            try:
+                tts = gTTS(text, lang="ar")
+                tts.save(cache_path)
+            except Exception as e:
+                print(f"gTTS generation failed: {e}, falling back to spd-say")
                 self._speak_spd(text)
                 return
         
         # Play using GStreamer (already available on Jetson)
+        env = os.environ.copy()
+        if "XDG_RUNTIME_DIR" not in env:
+            env["XDG_RUNTIME_DIR"] = "/run/user/1000"
+        if "PULSE_SERVER" not in env:
+            env["PULSE_SERVER"] = "unix:/run/user/1000/pulse/native"
+
         subprocess.run(
             ["gst-launch-1.0", "playbin", f"uri=file://{os.path.abspath(cache_path)}"],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            env=env
         )
 
     def _speak_spd(self, text):
         """Fallback: use spd-say with Arabic language."""
-        os.system(f"spd-say -l ar '{text}'")
+        os.system(f"XDG_RUNTIME_DIR=/run/user/1000 PULSE_SERVER=unix:/run/user/1000/pulse/native spd-say -l ar '{text}'")

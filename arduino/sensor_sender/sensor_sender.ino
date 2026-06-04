@@ -34,7 +34,13 @@ SoftwareSerial gpsSerial(4, 3);
 
 bool buzzerState = false;
 bool vibState = false;
+bool aiBuzzerState = false;
+bool aiVibState = false;
 bool autoAlarm = true;
+int vibIntensity = 255;       // PWM intensity (0-255) - default MAX
+bool vibPulseMode = true;     // Pulse mode for stronger feel
+unsigned long lastPulse = 0;
+bool pulseHigh = true;
 
 int alarmDistance = 50;   // cm
 float distanceCm = -1;
@@ -81,6 +87,18 @@ void setup() {
   Serial.println("{\"status\":\"ready\",\"mpu\":" + String(mpuOk ? "true" : "false") + "}");
 }
 
+void updateOutputStates() {
+  bool ultraAlarm = false;
+  if (autoAlarm) {
+    if (distanceCm > 0 && distanceCm <= alarmDistance) {
+      ultraAlarm = true;
+    }
+  }
+
+  buzzerState = aiBuzzerState || ultraAlarm;
+  vibState = aiVibState || ultraAlarm;
+}
+
 void loop() {
   readSerialCommand();
   processGPS();
@@ -90,16 +108,7 @@ void loop() {
     lastUltra = millis();
     distanceCm = readUltrasonicCM();
 
-    if (autoAlarm) {
-      if (distanceCm > 0 && distanceCm <= alarmDistance) {
-        buzzerState = true;
-        vibState = true;
-      } else {
-        buzzerState = false;
-        vibState = false;
-      }
-    }
-
+    updateOutputStates();
     applyOutputs();
   }
 
@@ -193,23 +202,19 @@ void handleCommand(String cmd) {
   cmd.toLowerCase();
 
   if (cmd == "b1") {
-    buzzerState = true;
-    autoAlarm = false;
+    aiBuzzerState = true;
     Serial.println("{\"cmd\":\"b1\",\"ok\":true}");
   } 
   else if (cmd == "b0") {
-    buzzerState = false;
-    autoAlarm = false;
+    aiBuzzerState = false;
     Serial.println("{\"cmd\":\"b0\",\"ok\":true}");
   } 
   else if (cmd == "v1") {
-    vibState = true;
-    autoAlarm = false;
+    aiVibState = true;
     Serial.println("{\"cmd\":\"v1\",\"ok\":true}");
   } 
   else if (cmd == "v0") {
-    vibState = false;
-    autoAlarm = false;
+    aiVibState = false;
     Serial.println("{\"cmd\":\"v0\",\"ok\":true}");
   } 
   else if (cmd == "a1") {
@@ -229,16 +234,14 @@ void handleCommand(String cmd) {
   } 
   else if (cmd == "alert") {
     // Emergency: turn on both buzzer and vibration
-    buzzerState = true;
-    vibState = true;
-    autoAlarm = false;
+    aiBuzzerState = true;
+    aiVibState = true;
     Serial.println("{\"cmd\":\"alert\",\"ok\":true}");
   }
   else if (cmd == "stop") {
-    // Stop all outputs
-    buzzerState = false;
-    vibState = false;
-    autoAlarm = false;
+    // Stop all AI outputs
+    aiBuzzerState = false;
+    aiVibState = false;
     Serial.println("{\"cmd\":\"stop\",\"ok\":true}");
   }
   else if (cmd == "r") {
@@ -249,13 +252,28 @@ void handleCommand(String cmd) {
     Serial.println("{\"cmd\":\"unknown\",\"ok\":false}");
   }
 
+  updateOutputStates();
   applyOutputs();
 }
 
 // ================= Outputs =================
 void applyOutputs() {
   digitalWrite(BUZZER_PIN, buzzerState ? HIGH : LOW);
-  analogWrite(VIB_PIN, vibState ? 255 : 0);
+  
+  if (vibState) {
+    if (vibPulseMode) {
+      // Rapid pulse between HIGH and MED for stronger physical feel
+      if (millis() - lastPulse >= 40) {
+        lastPulse = millis();
+        pulseHigh = !pulseHigh;
+      }
+      analogWrite(VIB_PIN, pulseHigh ? 255 : 180);
+    } else {
+      analogWrite(VIB_PIN, vibIntensity);
+    }
+  } else {
+    analogWrite(VIB_PIN, 0);
+  }
 }
 
 // ================= Ultrasonic =================
