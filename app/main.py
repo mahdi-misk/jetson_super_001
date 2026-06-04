@@ -14,9 +14,21 @@ from app.speech import SpeechEngine
 import threading
 from app.translations import translate_label
 from app import web_dashboard
+try:
+    from app import network_manager as nm
+except ImportError:
+    nm = None
 
 def main():
     print("Starting RoadVision-AI Assistant (YOLO + MiDaS)...")
+    
+    if nm:
+        print("Checking internet connection...")
+        if not nm.check_internet():
+            print("No internet detected. Starting Hotspot mode...")
+            nm.start_hotspot()
+        else:
+            print("Internet connection is active.")
     
     speech_engine = SpeechEngine(cooldown_seconds=config.SPEECH_COOLDOWN_SECONDS)
     

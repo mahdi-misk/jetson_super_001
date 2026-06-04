@@ -1,0 +1,14 @@
+names:
+- downstairs
+- handrail
+- upstairs
+nc: 3
+roboflow:
+  license: CC BY 4.0
+  project: stairs-handrail-detector
+  url: https://universe.roboflow.com/itlabroom/stairs-handrail-detector/dataset/1
+  version: 1
+  workspace: itlabroom
+test: ../test/images
+train: ../train/images
+val: ../valid/images
