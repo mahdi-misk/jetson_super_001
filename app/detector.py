@@ -5,17 +5,16 @@ import os
 from ultralytics import YOLO
 
 class RoadVisionEngine:
-    def __init__(self, pothole_model_path="models/pothole/pothole_yolov8_final.pt",
-                       stairs_model_path="models/stairs/stairs_handrail.pt",
+    def __init__(self, pothole_model_path="models/pothole/pothole_yolov8_final.onnx",
+                       stairs_model_path="models/stairs/stairs_yolov8_final.onnx",
                        obstacle_model_path="yolov8n.pt"):
         print("Initializing RoadVision Engine (YOLO + MiDaS)...")
         
         def get_best_model_path(base_path):
-            if base_path.endswith('.pt'):
-                engine_path = base_path.replace('.pt', '.engine')
-                if os.path.exists(engine_path):
-                    print(f"🚀 Found optimized TensorRT engine: {engine_path}")
-                    return engine_path
+            engine_path = base_path.replace('.pt', '.engine').replace('.onnx', '.engine')
+            if os.path.exists(engine_path):
+                print(f"🚀 Found optimized TensorRT engine: {engine_path}")
+                return engine_path
             return base_path
 
         pothole_model_path = get_best_model_path(pothole_model_path)
@@ -25,13 +24,13 @@ class RoadVisionEngine:
         # Load YOLO models
         try:
             print(f"Loading Pothole model: {pothole_model_path}")
-            self.pothole_model = YOLO(pothole_model_path)
+            self.pothole_model = YOLO(pothole_model_path, task='detect')
             
             print(f"Loading Stairs model: {stairs_model_path}")
-            self.stairs_model = YOLO(stairs_model_path)
+            self.stairs_model = YOLO(stairs_model_path, task='detect')
             
             print(f"Loading General Obstacle model: {obstacle_model_path}")
-            self.obstacle_model = YOLO(obstacle_model_path)
+            self.obstacle_model = YOLO(obstacle_model_path, task='detect')
         except Exception as e:
             print(f"Error loading YOLO models: {e}")
             self.pothole_model = None
