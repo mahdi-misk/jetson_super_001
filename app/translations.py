@@ -79,6 +79,11 @@ COCO_ARABIC = {
     "teddy bear": "دمية دب",
     "hair drier": "مجفف شعر",
     "toothbrush": "فرشاة أسنان",
+    "handrail": "درابزين",
+    "upstairs": "درج صاعد",
+    "downstairs": "درج نازل",
+    "stairs": "درج",
+    "pothole": "حفرة",
 }
 
 def translate_label(label):

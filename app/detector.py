@@ -6,7 +6,7 @@ from ultralytics import YOLO
 
 class RoadVisionEngine:
     def __init__(self, pothole_model_path="models/pothole/pothole_yolov8_final.pt",
-                       stairs_model_path="models/stairs/stairs_yolov8_final.pt",
+                       stairs_model_path="models/stairs/stairs_handrail.pt",
                        obstacle_model_path="yolov8n.pt"):
         print("Initializing RoadVision Engine (YOLO + MiDaS)...")
         
