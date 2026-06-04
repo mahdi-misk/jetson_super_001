@@ -25,10 +25,14 @@ def main():
     if nm:
         print("Checking internet connection...")
         if not nm.check_internet():
-            print("No internet detected. Starting Hotspot mode...")
-            nm.start_hotspot()
+            print("No internet. Trying last known Wi-Fi...")
+            if not nm.try_last_wifi():
+                print("Could not connect to last Wi-Fi. Starting Hotspot mode...")
+                nm.start_hotspot()
         else:
             print("Internet connection is active.")
+        # Start auto-recovery monitor (checks every 30 seconds)
+        nm.start_monitor(check_interval=30)
     
     speech_engine = SpeechEngine(cooldown_seconds=config.SPEECH_COOLDOWN_SECONDS)
     
@@ -140,10 +144,11 @@ def main():
                         text = f"{label_eng} | {state} | {distance:.1f}m"
                         font = cv2.FONT_HERSHEY_SIMPLEX
                         (tw, th), _ = cv2.getTextSize(text, font, 0.5, 2)
-                        cv2.rectangle(frame, (x1, y1 - th - 5), (x1 + tw, y1), color, -1)
+                        # Draw text background INSIDE the box (top-inside)
+                        cv2.rectangle(frame, (x1, y1), (x1 + tw + 4, y1 + th + 8), color, -1)
                         
                         # Text color black for better contrast on colored backgrounds
-                        cv2.putText(frame, text, (x1, max(y1 - 2, 0)), font, 0.5, (0, 0, 0), 2)
+                        cv2.putText(frame, text, (x1 + 2, y1 + th + 4), font, 0.5, (0, 0, 0), 2)
                     
                     # Generate speech message for hazards
                     if hazard_detected:

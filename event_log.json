@@ -1,0 +1,32 @@
+[
+  {
+    "timestamp": "2026-06-04 06:25:40",
+    "category": "system",
+    "message": "تم تشغيل مراقب الاتصال التلقائي",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 06:26:34",
+    "category": "bluetooth",
+    "message": "تم الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 06:29:19",
+    "category": "system",
+    "message": "تم تشغيل مراقب الاتصال التلقائي",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 06:31:18",
+    "category": "system",
+    "message": "تم تشغيل مراقب الاتصال التلقائي",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 06:33:01",
+    "category": "system",
+    "message": "تم تشغيل مراقب الاتصال التلقائي",
+    "level": "info"
+  }
+]
