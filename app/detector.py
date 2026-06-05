@@ -150,4 +150,56 @@ class RoadVisionEngine:
         process_results(stairs_results, is_hazard=True)
         process_results(obstacle_results, is_hazard=False)
 
+        # 3. Wall Detection (Heuristic based on Depth Map)
+        # Check a large central Region of Interest (ROI)
+        height, width = depth_map.shape
+        roi_x1 = int(width * 0.25)
+        roi_x2 = int(width * 0.75)
+        roi_y1 = int(height * 0.25)
+        roi_y2 = int(height * 0.75)
+        
+        wall_depth_values = depth_map[roi_y1:roi_y2, roi_x1:roi_x2]
+        if wall_depth_values.size > 0:
+            median_inverse_depth = np.median(wall_depth_values)
+            std_depth = float(np.std(wall_depth_values))
+            
+            from app import config
+            simulated_distance = config.DEPTH_SCALE_FACTOR / median_inverse_depth if median_inverse_depth > 0 else 99.9
+            
+            # Relative standard deviation to measure "flatness"
+            relative_std = std_depth / (median_inverse_depth + 1e-6)
+            
+            # If distance is < 4 meters and the region is relatively flat (low depth variance)
+            if simulated_distance < 4.0 and relative_std < 0.15:
+                # Calculate safe direction based on depth on the sides
+                left_roi = depth_map[roi_y1:roi_y2, 0:roi_x1]
+                right_roi = depth_map[roi_y1:roi_y2, roi_x2:width]
+                
+                left_median = np.median(left_roi) if left_roi.size > 0 else 99.9
+                right_median = np.median(right_roi) if right_roi.size > 0 else 99.9
+                
+                # smaller inverse depth means further away
+                safe_dir = "يساراً" if left_median < right_median else "يميناً"
+
+                # We also want to ensure that this isn't just a person detected. 
+                # A simple way is to check if it's mostly a wall, we add it as a detection.
+                if simulated_distance > 2.5:
+                    state = "WARNING"
+                    color = (0, 255, 255) # Yellow
+                else:
+                    state = "DANGER"
+                    color = (0, 0, 255) # Red
+                    
+                all_detections.append({
+                    "label": "wall",
+                    "confidence": max(0.4, 1.0 - (relative_std * 5)), # Pseudo-confidence
+                    "bbox": [roi_x1, roi_y1, roi_x2, roi_y2],
+                    "distance": simulated_distance,
+                    "state": state,
+                    "color": color,
+                    "severity_ar": "جدار مسطح",
+                    "safe_dir": safe_dir,
+                    "is_hazard": False # Usually not a sudden hazard like a pothole, but an obstacle
+                })
+
         return all_detections

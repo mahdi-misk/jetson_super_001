@@ -700,5 +700,23 @@
     "category": "system",
     "message": "Auto-connection monitor started",
     "level": "info"
+  },
+  {
+    "timestamp": "2026-06-05 16:09:01",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-05 16:12:36",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-05 16:13:07",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
   }
 ]

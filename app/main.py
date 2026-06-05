@@ -171,7 +171,17 @@ def main():
                         last_vibration_state = vibration_triggered
                 
                 # Speech Generation
-                if hazard_objects:
+                wall_in_front = False
+                safe_direction = ""
+                for det in latest_detections:
+                    if det["label"] == "wall":
+                        wall_in_front = True
+                        safe_direction = det.get("safe_dir", "")
+                        break
+                
+                if wall_in_front:
+                    speech_engine.speak(f"هناك جدار أمامك، اتجه {safe_direction}".strip())
+                elif hazard_objects:
                     hazards_str = " و ".join(list(hazard_objects)[:2])
                     speech_engine.speak(f"تحذير! {hazards_str}!")
                 elif speech_objects:

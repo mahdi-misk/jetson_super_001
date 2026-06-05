@@ -86,6 +86,7 @@ COCO_ARABIC = {
     "pothole": "حفرة",
     "potholes": "حفرة",
     "hole": "حفرة",
+    "wall": "جدار",
 }
 
 def translate_label(label):
