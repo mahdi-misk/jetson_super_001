@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+import torch
 from collections import deque
 from ultralytics import YOLO
 import onnxruntime as ort
@@ -10,16 +11,29 @@ class RoadVisionEngine:
                        stairs_model_path="models/stairs/stairs_yolov8.pt",
                        obstacle_model_path="yolov8n.pt"):
         print("Initializing RoadVision Engine (YOLO + MiDaS)...")
+        print(f"  🔍 CUDA available: {torch.cuda.is_available()}")
+        if torch.cuda.is_available():
+            print(f"  🔍 CUDA device: {torch.cuda.get_device_name(0)}")
         
         def get_best_model_path(base_path):
+            # Priority: .engine (TensorRT, fastest) > .pt (PyTorch CUDA) > .onnx (fallback)
+            # IMPORTANT: .pt is preferred over .onnx because YOLO's internal ONNX loader
+            # does NOT use explicit CUDA providers, causing inference to run on CPU.
+            # PyTorch .pt models with device=0 use CUDA directly.
             engine_path = base_path.replace('.pt', '.engine').replace('.onnx', '.engine')
             if os.path.exists(engine_path):
                 print(f"🚀 Found optimized TensorRT engine: {engine_path}")
                 return engine_path
             
+            # Prefer .pt for proper PyTorch CUDA support
+            if os.path.exists(base_path) and base_path.endswith('.pt'):
+                print(f"✅ Using PyTorch model (CUDA-native): {base_path}")
+                return base_path
+            
+            # ONNX as last resort (will run on CPU inside YOLO's internal runner)
             onnx_path = base_path.replace('.pt', '.onnx')
             if os.path.exists(onnx_path):
-                print(f"✅ Found ONNX model: {onnx_path}")
+                print(f"⚠️ Using ONNX model (may not use GPU): {onnx_path}")
                 return onnx_path
                 
             return base_path
@@ -28,43 +42,115 @@ class RoadVisionEngine:
         stairs_model_path = get_best_model_path(stairs_model_path)
         obstacle_model_path = get_best_model_path(obstacle_model_path)
         
-        # Load YOLO models
-        try:
-            print(f"Loading Pothole model: {pothole_model_path}")
-            self.pothole_model = YOLO(pothole_model_path, task='detect')
-            
-            print(f"Loading Stairs model: {stairs_model_path}")
-            self.stairs_model = YOLO(stairs_model_path, task='detect')
-            
-            print(f"Loading General Obstacle model: {obstacle_model_path}")
-            self.obstacle_model = YOLO(obstacle_model_path, task='detect')
-        except Exception as e:
-            print(f"Error loading YOLO models: {e}")
-            self.pothole_model = None
+        self.pothole_model = None
+        self.stairs_model = None
+        self.obstacle_model = None
+        self.midas_session = None
+        self.midas_input_name = None
+        self.models_loaded = False
+        self._use_half = True  # Will fallback to False if FP16 causes errors
+        
+        def load_models_async():
+            try:
+                # --- Initialize CUDA context FIRST ---
+                # cuBLAS needs a properly initialized context before fuse() works
+                print("  🔧 Initializing CUDA context...")
+                torch.cuda.init()
+                torch.cuda.empty_cache()
+                _warmup_tensor = torch.zeros(1, device='cuda')
+                _ = _warmup_tensor + 1  # Force CUDA kernel compilation
+                del _warmup_tensor
+                torch.cuda.empty_cache()
+                print(f"  ✅ CUDA context ready. Free memory: {torch.cuda.mem_get_info()[0] / 1024**2:.0f} MB")
 
-        if self.pothole_model:
-            # Load MiDaS via ONNX Runtime (10x faster than PyTorch CPU)
-            print("Loading MiDaS Depth Estimation model (ONNX Runtime)...")
-            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            midas_onnx_path = os.path.join(base_dir, "models", "midas", "midas_small.onnx")
-            
-            # Pick the best available provider (GPU > CPU)
-            available = ort.get_available_providers()
-            providers = []
-            if "CUDAExecutionProvider" in available:
-                providers.append("CUDAExecutionProvider")
-                print("  ⚡ Using CUDA GPU for MiDaS")
-            if "TensorrtExecutionProvider" in available:
-                providers.insert(0, "TensorrtExecutionProvider")
-                print("  🚀 Using TensorRT for MiDaS")
-            providers.append("CPUExecutionProvider")
-            
-            self.midas_session = ort.InferenceSession(midas_onnx_path, providers=providers)
-            self.midas_input_name = self.midas_session.get_inputs()[0].name
-            active_provider = self.midas_session.get_providers()[0]
-            print(f"  MiDaS running on: {active_provider}")
-            
-            print("✅ RoadVision Engine is Ready!")
+                # --- Load YOLO models one at a time, move to GPU, clear cache ---
+                def load_yolo_to_gpu(name, path):
+                    print(f"Loading {name} model: {path}")
+                    model = YOLO(path, task='detect')
+                    model.to("cuda")
+                    torch.cuda.empty_cache()
+                    dev = next(model.model.parameters()).device
+                    print(f"  ✅ {name} model device: {dev}")
+                    return model
+
+                self.pothole_model = load_yolo_to_gpu("Pothole", pothole_model_path)
+                self.stairs_model = load_yolo_to_gpu("Stairs", stairs_model_path)
+                self.obstacle_model = load_yolo_to_gpu("Obstacle", obstacle_model_path)
+
+                print(f"  📊 GPU memory after loading: {torch.cuda.mem_get_info()[0] / 1024**2:.0f} MB free")
+
+                # --- Warmup: trigger model fuse + first inference ---
+                # Start with FP32 (safer), then test FP16
+                print("  🔥 Warming up YOLO models on GPU...")
+                dummy = np.zeros((480, 640, 3), dtype=np.uint8)
+
+                # Warmup each model with FP32 first (triggers fuse safely)
+                for name, model in [("Pothole", self.pothole_model),
+                                     ("Stairs", self.stairs_model),
+                                     ("Obstacle", self.obstacle_model)]:
+                    try:
+                        torch.cuda.empty_cache()
+                        model.predict(source=dummy, device=0, half=False, verbose=False)
+                        print(f"  ✅ {name} FP32 warmup OK")
+                    except RuntimeError as e:
+                        print(f"  ⚠️ {name} FP32 warmup failed: {e}")
+                        torch.cuda.empty_cache()
+
+                # Now test FP16 (half precision — faster on Jetson if supported)
+                try:
+                    torch.cuda.empty_cache()
+                    self.pothole_model.predict(source=dummy, device=0, half=True, verbose=False)
+                    self._use_half = True
+                    print("  ✅ FP16 (half) test passed — will use half precision")
+                except Exception as e:
+                    self._use_half = False
+                    print(f"  ⚠️ FP16 not supported: {e}")
+                    print("  ↪ Using FP32 (half=False)")
+
+            except Exception as e:
+                print(f"Error loading YOLO models: {e}")
+                import traceback
+                traceback.print_exc()
+                self.pothole_model = None
+
+            if self.pothole_model:
+                try:
+                    print("Loading MiDaS Depth Estimation model (ONNX Runtime)...")
+                    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    midas_onnx_path = os.path.join(base_dir, "models", "midas", "midas_small.onnx")
+                    
+                    # Build providers in priority order: TensorRT > CUDA > CPU
+                    available = ort.get_available_providers()
+                    print(f"  🔍 ONNX available providers: {available}")
+                    providers = []
+                    if "TensorrtExecutionProvider" in available:
+                        providers.append("TensorrtExecutionProvider")
+                        print("  🚀 Using TensorRT for MiDaS")
+                    if "CUDAExecutionProvider" in available:
+                        providers.append("CUDAExecutionProvider")
+                        print("  ⚡ Using CUDA GPU for MiDaS")
+                    providers.append("CPUExecutionProvider")
+                    
+                    print(f"  Requested providers (priority order): {providers}")
+                    self.midas_session = ort.InferenceSession(midas_onnx_path, providers=providers)
+                    self.midas_input_name = self.midas_session.get_inputs()[0].name
+                    active_providers = self.midas_session.get_providers()
+                    print(f"  MiDaS ONNX active providers: {active_providers}")
+                    print(f"  MiDaS primary provider: {active_providers[0]}")
+                    
+                    print("=" * 60)
+                    print("✅ RoadVision Engine AI Models are Ready!")
+                    print(f"   YOLO device: cuda:0 | half={self._use_half}")
+                    print(f"   MiDaS provider: {active_providers[0]}")
+                    print("=" * 60)
+                    self.models_loaded = True
+                except Exception as e:
+                    print(f"Error loading MiDaS model: {e}")
+                    import traceback
+                    traceback.print_exc()
+
+        import threading
+        threading.Thread(target=load_models_async, daemon=True).start()
 
         # --- Severity Stabilisation ---
         # Maps track_id -> deque of recent severity strings (last SEVERITY_WINDOW frames)
@@ -72,12 +158,31 @@ class RoadVisionEngine:
         self._severity_history = {}   # {track_id: deque(["عميقة", "عميقة", ...])}
         self._active_track_ids = set()  # track IDs seen this frame (for cleanup)
 
+    def _run_track(self, model, frame):
+        """Run YOLO tracking with automatic half precision fallback."""
+        try:
+            return model.track(
+                source=frame, conf=0.45, persist=True,
+                verbose=False, device=0, half=self._use_half
+            )
+        except Exception as e:
+            if self._use_half:
+                print(f"⚠️ YOLO track failed with half=True: {e}")
+                print("↪ Retrying with half=False...")
+                self._use_half = False
+                return model.track(
+                    source=frame, conf=0.45, persist=True,
+                    verbose=False, device=0, half=False
+                )
+            else:
+                raise
+
     def detect(self, frame):
         """
         Runs object detection and depth estimation.
         Returns a list of dictionaries with 'label', 'confidence', 'bbox', 'distance', 'state', 'color'.
         """
-        if not self.pothole_model:
+        if not self.models_loaded:
             return []
 
         # 1. Depth Map Generation (ONNX Runtime — no PyTorch needed)
@@ -152,10 +257,10 @@ class RoadVisionEngine:
                     "is_hazard": is_hazard # Flag for critical objects like potholes/stairs
                 })
 
-        # 2. Run YOLO Inferences (using tracking for stability)
-        pothole_results = self.pothole_model.track(source=frame, conf=0.45, persist=True, verbose=False, device='cpu')
-        stairs_results = self.stairs_model.track(source=frame, conf=0.45, persist=True, verbose=False, device='cpu')
-        obstacle_results = self.obstacle_model.track(source=frame, conf=0.45, persist=True, verbose=False, device='cpu')
+        # 2. Run YOLO Inferences (using tracking for stability, GPU with half fallback)
+        pothole_results = self._run_track(self.pothole_model, frame)
+        stairs_results = self._run_track(self.stairs_model, frame)
+        obstacle_results = self._run_track(self.obstacle_model, frame)
 
         process_results(pothole_results, is_hazard=True)
         process_results(stairs_results, is_hazard=True)
