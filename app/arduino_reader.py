@@ -30,13 +30,13 @@ LSB_PER_G = 16384.0
 
 # Fall detection thresholds
 FREEFALL_THRESHOLD = 0.4   # g - below this = free fall
-IMPACT_THRESHOLD = 2.5     # g - above this = impact
+IMPACT_THRESHOLD = 2.0     # g - above this = hard impact (more sensitive)
 STILL_THRESHOLD = 0.3      # g variance - person lying still after fall
 FALL_CONFIRM_SECONDS = 3   # seconds to wait before confirming fall
 FALL_COOLDOWN_SECONDS = 60 # don't re-trigger fall for 60s
 
 # Person info (placeholder - will be dynamic later)
-PERSON_NAME = "أحمد محمد"
+PERSON_NAME = "Ahmed Mohamed"
 PERSON_AGE = 72
 PERSON_ID = "P001"
 
@@ -254,10 +254,9 @@ class ArduinoReader:
         if (now - self._last_fall_alert) < FALL_COOLDOWN_SECONDS:
             return
 
-        # Force=1: Ultra-sensitive collision detection (resting is ~1.0g)
-        # Any deviation > 0.05g from 1.0g triggers alert
-        if abs(magnitude - 1.0) > 0.05:
-            print(f"Collision Detection: Impact detected (magnitude={magnitude:.2f}g)")
+        # Only trigger on hard impact (e.g. cane hitting the ground)
+        if magnitude > IMPACT_THRESHOLD:
+            print(f"⚠️ Hard Impact Detected! (magnitude={magnitude:.2f}g, threshold={IMPACT_THRESHOLD}g)")
             self._trigger_fall_alert(data)
 
     def _trigger_fall_alert(self, data):
@@ -321,34 +320,34 @@ class ArduinoReader:
         if not data:
             return None
 
-        lines = ["📊 *بيانات الحساسات*", ""]
-
+        lines = ["📊 *Sensor Data*", ""]
+        
         # Distance
         dist = data.get("d", -1)
         if dist > 0:
-            lines.append(f"📏 المسافة: *{dist:.1f} cm*")
+            lines.append(f"📏 Distance: *{dist:.1f} cm*")
         else:
-            lines.append("📏 المسافة: *خارج النطاق*")
+            lines.append("📏 Distance: *Out of range*")
 
         # Acceleration (in g)
         ax = data.get("ax", 0) / LSB_PER_G
         ay = data.get("ay", 0) / LSB_PER_G
         az = data.get("az", 0) / LSB_PER_G
         total_g = math.sqrt(ax**2 + ay**2 + az**2)
-        lines.append(f"📐 التسارع: *{total_g:.2f}g*")
+        lines.append(f"📐 Acceleration: *{total_g:.2f}g*")
 
         # GPS
         if data.get("gps", False):
             lat = data.get("lat", 0)
             lon = data.get("lon", 0)
-            lines.append(f"📍 الموقع: *{lat:.6f}, {lon:.6f}*")
+            lines.append(f"📍 Location: *{lat:.6f}, {lon:.6f}*")
         else:
-            lines.append("📍 GPS: *لا يوجد إشارة*")
+            lines.append("📍 GPS: *No Signal*")
 
         # Status
         buz = "🔔" if data.get("buz", 0) else "🔕"
         vib = "📳" if data.get("vib", 0) else "📴"
-        lines.append(f"البزر: {buz} | الاهتزاز: {vib}")
+        lines.append(f"Buzzer: {buz} | Vibration: {vib}")
 
         lines.append("")
         lines.append(f"👤 {PERSON_NAME}")

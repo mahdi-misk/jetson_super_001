@@ -14,3 +14,10 @@ runs/
 pothole_snapshots/
 pothole_logs/
 datasets/
+.venv/
+*.whl
+*.onnx
+torchvision_src/
+models/midas/
+models/stairs/
+*.bak*

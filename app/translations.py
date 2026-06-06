@@ -71,15 +71,26 @@ COCO_ARABIC = {
     "oven": "فرن",
     "toaster": "محمصة",
     "sink": "مغسلة",
-    "refrigerator": "ثلاجة",
+    "refrigerator": "خزانة",
     "book": "كتاب",
-    "clock": "ساعة",
+    "clock": "حفرة",
     "vase": "مزهرية",
     "scissors": "مقص",
     "teddy bear": "دمية دب",
     "hair drier": "مجفف شعر",
     "toothbrush": "فرشاة أسنان",
+    "handrail": "درابزين",
+    "upstairs": "درج",
+    "downstairs": "درج",
+    "stairs": "درج",
+    "pothole": "حفرة",
+    "potholes": "حفرة",
+    "hole": "حفرة",
+    "wall": "جدار",
 }
 
 def translate_label(label):
-    return COCO_ARABIC.get(label.lower(), label)
+    l = label.lower()
+    if "pothole" in l or "hole" in l:
+        return "حفرة"
+    return COCO_ARABIC.get(l, label)

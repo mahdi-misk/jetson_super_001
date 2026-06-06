@@ -1,0 +1,1352 @@
+[
+  {
+    "timestamp": "2026-06-04 06:25:40",
+    "category": "system",
+    "message": "تم تشغيل مراقب الاتصال التلقائي",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 06:26:34",
+    "category": "bluetooth",
+    "message": "تم الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 06:29:19",
+    "category": "system",
+    "message": "تم تشغيل مراقب الاتصال التلقائي",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 06:31:18",
+    "category": "system",
+    "message": "تم تشغيل مراقب الاتصال التلقائي",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 06:33:01",
+    "category": "system",
+    "message": "تم تشغيل مراقب الاتصال التلقائي",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 07:00:05",
+    "category": "system",
+    "message": "تم تشغيل مراقب الاتصال التلقائي",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 07:02:44",
+    "category": "network",
+    "message": "انقطع الاتصال بالإنترنت!",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-04 07:02:44",
+    "category": "network",
+    "message": "فشل تشغيل نقطة الاتصال: Command '['nmcli', 'con', 'add', 'type', 'wifi', 'ifname', 'wlan0', 'con-name', 'Jetson-Setup', 'autoconnect', 'no', 'ssid', 'Jetson-Setup']' returned non-zero exit status 4.",
+    "level": "error"
+  },
+  {
+    "timestamp": "2026-06-04 08:10:38",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:11:21",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:13:12",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:16:12",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:20:23",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:28:36",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:30:59",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:33:00",
+    "category": "network",
+    "message": "Internet connection lost!",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-04 08:33:01",
+    "category": "network",
+    "message": "Failed to start hotspot: Command '['nmcli', 'con', 'add', 'type', 'wifi', 'ifname', 'wlan0', 'con-name', 'Jetson-Setup', 'autoconnect', 'no', 'ssid', 'Jetson-Setup']' returned non-zero exit status 4.",
+    "level": "error"
+  },
+  {
+    "timestamp": "2026-06-04 08:34:37",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:37:18",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:38:03",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:39:34",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:53:38",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:55:40",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:58:06",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 08:59:52",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 09:01:14",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 09:09:26",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 09:42:23",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 09:43:20",
+    "category": "bluetooth",
+    "message": "تم الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 09:45:29",
+    "category": "network",
+    "message": "Internet connection lost!",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-04 09:45:29",
+    "category": "network",
+    "message": "Failed to start hotspot: Command '['nmcli', 'con', 'add', 'type', 'wifi', 'ifname', 'wlan0', 'con-name', 'Jetson-Setup', 'autoconnect', 'no', 'ssid', 'Jetson-Setup']' returned non-zero exit status 4.",
+    "level": "error"
+  },
+  {
+    "timestamp": "2026-06-04 09:46:35",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 13:01:52",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 13:02:25",
+    "category": "network",
+    "message": "Internet connection lost!",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-04 13:02:25",
+    "category": "network",
+    "message": "Failed to start hotspot: Command '['nmcli', 'con', 'add', 'type', 'wifi', 'ifname', 'wlan0', 'con-name', 'Jetson-Setup', 'autoconnect', 'no', 'ssid', 'Jetson-Setup']' returned non-zero exit status 4.",
+    "level": "error"
+  },
+  {
+    "timestamp": "2026-06-04 13:02:55",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 13:06:30",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 13:28:18",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 13:39:20",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 13:40:41",
+    "category": "network",
+    "message": "Failed to start hotspot: Command '['nmcli', 'con', 'add', 'type', 'wifi', 'ifname', 'wlan0', 'con-name', 'Jetson-Setup', 'autoconnect', 'no', 'ssid', 'Jetson-Setup']' returned non-zero exit status 4.",
+    "level": "error"
+  },
+  {
+    "timestamp": "2026-06-04 13:40:41",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 13:40:41",
+    "category": "network",
+    "message": "Started without internet! Starting hotspot...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-04 13:40:41",
+    "category": "network",
+    "message": "Failed to start hotspot: Command '['nmcli', 'con', 'add', 'type', 'wifi', 'ifname', 'wlan0', 'con-name', 'Jetson-Setup', 'autoconnect', 'no', 'ssid', 'Jetson-Setup']' returned non-zero exit status 4.",
+    "level": "error"
+  },
+  {
+    "timestamp": "2026-06-04 13:53:15",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 13:58:58",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 14:03:55",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 14:11:54",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 14:14:27",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 14:16:30",
+    "category": "network",
+    "message": "Failed to start hotspot: Command '['nmcli', 'con', 'add', 'type', 'wifi', 'ifname', 'wlP1p1s0', 'con-name', 'Jetson-Setup', 'autoconnect', 'no', 'ssid', 'Jetson-Setup']' returned non-zero exit status 4.",
+    "level": "error"
+  },
+  {
+    "timestamp": "2026-06-04 14:16:31",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 14:16:31",
+    "category": "network",
+    "message": "Started without internet! Starting hotspot...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-04 14:16:31",
+    "category": "network",
+    "message": "Failed to start hotspot: Command '['nmcli', 'con', 'add', 'type', 'wifi', 'ifname', 'wlP1p1s0', 'con-name', 'Jetson-Setup', 'autoconnect', 'no', 'ssid', 'Jetson-Setup']' returned non-zero exit status 4.",
+    "level": "error"
+  },
+  {
+    "timestamp": "2026-06-04 14:24:02",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 15:50:30",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 15:53:52",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 15:57:26",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-04 15:57:57",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 16:01:29",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-04 16:01:59",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 16:16:17",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 16:21:39",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 16:26:11",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-04 16:26:42",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 16:28:48",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 16:29:18",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-04 16:29:48",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 16:30:18",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-04 16:30:49",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 16:33:20",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 16:42:05",
+    "category": "bluetooth",
+    "message": "تم فصل جهاز 70:63:F3:24:D1:23",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 16:42:18",
+    "category": "bluetooth",
+    "message": "تم الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 16:49:46",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 16:53:25",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 16:55:15",
+    "category": "bluetooth",
+    "message": "تم الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 16:55:16",
+    "category": "bluetooth",
+    "message": "تم الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 17:01:49",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:09:41",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:14:35",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:15:19",
+    "category": "bluetooth",
+    "message": "فشل الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "error"
+  },
+  {
+    "timestamp": "2026-06-04 17:15:20",
+    "category": "bluetooth",
+    "message": "فشل الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "error"
+  },
+  {
+    "timestamp": "2026-06-04 17:15:21",
+    "category": "bluetooth",
+    "message": "فشل الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "error"
+  },
+  {
+    "timestamp": "2026-06-04 17:15:26",
+    "category": "bluetooth",
+    "message": "فشل الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "error"
+  },
+  {
+    "timestamp": "2026-06-04 17:15:42",
+    "category": "bluetooth",
+    "message": "فشل الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "error"
+  },
+  {
+    "timestamp": "2026-06-04 17:15:51",
+    "category": "bluetooth",
+    "message": "تم الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 17:18:50",
+    "category": "bluetooth",
+    "message": "تم فصل جهاز 70:63:F3:24:D1:23",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:19:11",
+    "category": "bluetooth",
+    "message": "تم الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 17:20:14",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:20:53",
+    "category": "bluetooth",
+    "message": "تم فصل جهاز 70:63:F3:24:D1:23",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:21:06",
+    "category": "bluetooth",
+    "message": "تم الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 17:22:56",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:24:08",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:24:25",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:25:48",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:28:50",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:29:10",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:29:39",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:29:57",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:35:18",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:49:47",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:52:39",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:53:37",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:54:10",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 17:58:26",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 18:02:45",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 18:04:27",
+    "category": "bluetooth",
+    "message": "تم الاتصال بجهاز 70:63:F3:24:D1:23",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 18:10:38",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 18:15:14",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-04 18:15:44",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 18:18:54",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-04 18:19:24",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-04 18:37:47",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 18:40:56",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 18:44:26",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 18:46:00",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 19:13:43",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 19:22:07",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-04 19:38:46",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-05 16:09:01",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-05 16:12:36",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-05 16:13:07",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-05 16:27:47",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-05 16:56:38",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-05 20:40:29",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-05 20:43:34",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-05 20:46:07",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-05 20:46:37",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-05 20:48:14",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-05 20:49:14",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-05 20:52:14",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-05 20:56:35",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-05 20:56:49",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-05 21:17:03",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-05 21:19:16",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-05 23:58:09",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 08:26:09",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 08:39:23",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 08:42:58",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 08:48:34",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 08:52:34",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 11:23:16",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 11:26:02",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 11:30:17",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 11:44:15",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 12:13:56",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-06 12:14:26",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-06 15:47:40",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 15:51:04",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 15:56:40",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 15:58:59",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 15:59:27",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 16:08:30",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 16:16:56",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 16:18:35",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 16:19:56",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 16:26:15",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 16:28:05",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 16:29:34",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 16:32:19",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 16:34:28",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-06 16:35:34",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-06 16:37:42",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-06 16:38:43",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-06 16:39:19",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-06 16:43:22",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-06 16:47:23",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 17:01:24",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 17:02:57",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 17:03:22",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 17:04:14",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 17:20:58",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 17:31:30",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 17:32:50",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 17:40:36",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 18:06:20",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 18:08:54",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 18:15:18",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 18:18:26",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 19:08:19",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 19:08:26",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 19:14:39",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 19:17:26",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 19:29:43",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 19:32:32",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 19:39:37",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 19:53:26",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 21:19:11",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 21:22:49",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 21:32:45",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 21:37:27",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-06 21:48:03",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 21:54:57",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 21:58:24",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 22:01:26",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 22:03:11",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 22:06:47",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-06 22:08:21",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-06 22:09:58",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-06 22:10:29",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-06 22:17:30",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 22:18:33",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 22:21:17",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-06 22:24:53",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-06 22:26:35",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-06 22:27:05",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-06 22:46:31",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-07 00:15:06",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-07 00:22:19",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-07 00:27:47",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-07 00:43:15",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-07 00:51:30",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-07 00:53:21",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-07 01:07:39",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-07 01:39:52",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-07 01:49:26",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-07 01:52:06",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-07 02:01:47",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-07 02:03:19",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-07 02:04:54",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-07 02:05:25",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-07 02:07:07",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-07 02:09:22",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-07 02:09:58",
+    "category": "network",
+    "message": "Internet connection lost! Trying to reconnect...",
+    "level": "warning"
+  },
+  {
+    "timestamp": "2026-06-07 02:19:08",
+    "category": "network",
+    "message": "Internet connection restored!",
+    "level": "success"
+  },
+  {
+    "timestamp": "2026-06-07 02:22:40",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  },
+  {
+    "timestamp": "2026-06-07 02:37:32",
+    "category": "system",
+    "message": "Auto-connection monitor started",
+    "level": "info"
+  }
+]

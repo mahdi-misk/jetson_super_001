@@ -1,12 +1,15 @@
 # Central configuration for the Vision + Voice AI Assistant
 
-CAMERA_0_INDEX = 1
-CAMERA_1_INDEX = 0
-FRAME_WIDTH = 480
-FRAME_HEIGHT = 360
+CAMERA_0_INDEX = 0
+CAMERA_1_INDEX = 1
+FRAME_WIDTH = 640
+FRAME_HEIGHT = 480
 FPS = 30
 
-DISPLAY_ON_JETSON = True
+# Depth Calibration Factor (Increase to make objects appear further, decrease to make them closer)
+DEPTH_SCALE_FACTOR = 1000.0
+
+DISPLAY_ON_JETSON = False
 WEB_PORT = 8000
 SPEECH_COOLDOWN_SECONDS = 5
 
@@ -27,5 +30,8 @@ TELEGRAM_SEND_INTERVAL = 0  # 0 to disable auto sensor updates (only send on col
 USE_POTHOLE_DETECTION = True
 POTHOLE_ROBOFLOW_API_KEY = "4lrHjIQ17hJryjEYNrfk"
 POTHOLE_ROBOFLOW_MODEL_ID = "pothole-vhmow/2" # Roboflow model ID
-POTHOLE_CONFIDENCE = 0.5                # Minimum confidence threshold (0.0 - 1.0)
+POTHOLE_CONFIDENCE = 0.65               # Minimum confidence threshold (0.0 - 1.0)
 POTHOLE_SNAPSHOT_COOLDOWN = 5           # Seconds between saving snapshots
+
+# --- Stairs Detection Settings ---
+STAIRS_CONFIDENCE = 0.71                # Minimum confidence threshold (0.0 - 1.0)

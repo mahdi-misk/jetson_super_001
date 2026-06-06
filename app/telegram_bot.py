@@ -73,14 +73,14 @@ class TelegramBot:
                     if chat_id and chat_id not in self.chat_ids:
                         self.chat_ids.add(chat_id)
                         user = msg.get("from", {})
-                        name = user.get("first_name", "مستخدم")
+                        name = user.get("first_name", "User")
                         print(f"Telegram Bot: New user - {name} (chat_id: {chat_id})")
                         self.send_message(
                             chat_id,
-                            f"مرحباً {name}! 👋\n"
-                            f"تم تسجيلك في نظام السلامة الذكي.\n"
-                            f"سيتم إرسال تنبيهات السقوط وبيانات الحساسات إليك.\n\n"
-                            f"أرسل /help لعرض الأوامر."
+                            f"Welcome {name}! 👋\n"
+                            f"You are registered in the Smart Safety System.\n"
+                            f"Fall alerts and sensor data will be sent to you.\n\n"
+                            f"Send /help to view commands."
                         )
 
                     # Handle commands
@@ -113,14 +113,14 @@ class TelegramBot:
     def _handle_help_command(self, chat_id):
         """Send help message."""
         help_text = (
-            "🤖 *أوامر البوت:*\n\n"
-            "📊 /sensors - بيانات الحساسات الحالية\n"
-            "📸 /status - حالة الكشف بالكاميرا\n"
-            "📍 /location - الموقع الحالي\n"
-            "🔔 /buzzer\\_on - تشغيل البزر\n"
-            "🔕 /buzzer\\_off - إيقاف البزر\n"
-            "❓ /help - عرض الأوامر\n\n"
-            "⚠️ سيتم إرسال تنبيه فوري في حالة السقوط!"
+            "🤖 *Bot Commands:*\n\n"
+            "📊 /sensors - Current sensor data\n"
+            "📸 /status - Camera detection status\n"
+            "📍 /location - Current location\n"
+            "🔔 /buzzer\\_on - Turn on buzzer\n"
+            "🔕 /buzzer\\_off - Turn off buzzer\n"
+            "❓ /help - View commands\n\n"
+            "⚠️ An instant alert will be sent in case of a fall!"
         )
         self.send_message(chat_id, help_text)
 
@@ -129,9 +129,9 @@ class TelegramBot:
         with self._lock:
             detection = self._last_detection
         if detection:
-            self.send_message(chat_id, f"📸 *آخر كشف:*\n{detection}")
+            self.send_message(chat_id, f"📸 *Last Detection:*\n{detection}")
         else:
-            self.send_message(chat_id, "📸 لا يوجد كشف حالياً.")
+            self.send_message(chat_id, "📸 No detection currently.")
 
     def _handle_sensors_command(self, chat_id):
         """Send current sensor data."""
@@ -140,9 +140,9 @@ class TelegramBot:
             if msg:
                 self.send_message(chat_id, msg)
             else:
-                self.send_message(chat_id, "⚠️ لا توجد بيانات من الحساسات.")
+                self.send_message(chat_id, "⚠️ No data from sensors.")
         else:
-            self.send_message(chat_id, "⚠️ الأردوينو غير متصل.")
+            self.send_message(chat_id, "⚠️ Arduino is not connected.")
 
     def _handle_location_command(self, chat_id):
         """Send current GPS location."""
@@ -151,21 +151,21 @@ class TelegramBot:
             if lat and lon:
                 self.send_location(chat_id, lat, lon)
             else:
-                self.send_message(chat_id, "📍 لا توجد إشارة GPS حالياً.")
+                self.send_message(chat_id, "📍 No GPS signal currently.")
         else:
-            self.send_message(chat_id, "⚠️ الأردوينو غير متصل.")
+            self.send_message(chat_id, "⚠️ Arduino is not connected.")
 
     def _handle_buzzer_command(self, chat_id, on):
         """Control buzzer remotely."""
         if self._arduino_reader:
             if on:
                 self._arduino_reader.buzzer_on()
-                self.send_message(chat_id, "🔔 تم تشغيل البزر.")
+                self.send_message(chat_id, "🔔 Buzzer turned on.")
             else:
                 self._arduino_reader.alert_off()
-                self.send_message(chat_id, "🔕 تم إيقاف البزر.")
+                self.send_message(chat_id, "🔕 Buzzer turned off.")
         else:
-            self.send_message(chat_id, "⚠️ الأردوينو غير متصل.")
+            self.send_message(chat_id, "⚠️ Arduino is not connected.")
 
     # =================== Send Methods (Asynchronous Queueing) ===================
 
@@ -273,7 +273,7 @@ class TelegramBot:
         fall_info dict:
           person_name, person_age, person_id, lat, lon, gps_fix, time
         """
-        name = fall_info.get("person_name", "غير معروف")
+        name = fall_info.get("person_name", "Unknown")
         age = fall_info.get("person_age", "?")
         pid = fall_info.get("person_id", "?")
         lat = fall_info.get("lat", 0)
@@ -282,25 +282,25 @@ class TelegramBot:
         fall_time = fall_info.get("time", "")
 
         alert_msg = (
-            "🚨🚨🚨 *تنبيه سقوط!* 🚨🚨🚨\n\n"
-            f"👤 *الاسم:* {name}\n"
-            f"🎂 *العمر:* {age} سنة\n"
-            f"🆔 *الرقم:* {pid}\n"
-            f"⏰ *الوقت:* {fall_time}\n\n"
+            "🚨🚨🚨 *FALL ALERT!* 🚨🚨🚨\n\n"
+            f"👤 *Name:* {name}\n"
+            f"🎂 *Age:* {age} years\n"
+            f"🆔 *ID:* {pid}\n"
+            f"⏰ *Time:* {fall_time}\n\n"
         )
 
         if gps_fix and (lat != 0 or lon != 0):
             maps_link = f"https://www.google.com/maps?q={lat},{lon}"
-            alert_msg += f"📍 *الموقع:* [{lat:.6f}, {lon:.6f}]({maps_link})\n"
+            alert_msg += f"📍 *Location:* [{lat:.6f}, {lon:.6f}]({maps_link})\n"
         else:
-            alert_msg += "📍 *الموقع:* لا توجد إشارة GPS\n"
+            alert_msg += "📍 *Location:* No GPS signal\n"
 
-        alert_msg += "\n⚠️ يرجى التحقق من سلامة الشخص فوراً!"
+        alert_msg += "\n⚠️ Please check the person's safety immediately!"
 
         # Create inline keyboard for stop button
         keyboard = {
             "inline_keyboard": [[
-                {"text": "🔕 إيقاف الإنذار (Stop Alarm)", "callback_data": "stop_alarm"}
+                {"text": "🔕 Stop Alarm", "callback_data": "stop_alarm"}
             ]]
         }
 
