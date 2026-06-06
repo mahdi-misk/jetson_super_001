@@ -143,7 +143,12 @@ def main():
                     
                     # Add label and direction for speech (all objects)
                     obj_desc = f"{label_ar} {severity_ar} {direction}".strip()
-                    speech_objects.add(obj_desc)
+                    
+                    # Only mention potholes if they are close (WARNING or DANGER)
+                    if "pothole" in label_eng.lower() and state == "SAFE":
+                        pass # Ignore far away potholes for speech
+                    else:
+                        speech_objects.add(obj_desc)
                     
                     if is_hazard and state in ["DANGER", "WARNING"]:
                         hazard_detected = True
@@ -171,17 +176,16 @@ def main():
                         last_vibration_state = vibration_triggered
                 
                 # Speech Generation
-                wall_in_front = False
-                safe_direction = ""
+                # Collect wall detections (only emitted when < 2m / DANGER)
                 for det in latest_detections:
-                    if det["label"] == "wall":
-                        wall_in_front = True
+                    if det["label"] == "wall" and det["state"] == "DANGER":
                         safe_direction = det.get("safe_dir", "")
-                        break
-                
-                if wall_in_front:
-                    speech_engine.speak(f"هناك جدار أمامك، اتجه {safe_direction}".strip())
-                elif hazard_objects:
+                        wall_msg = f"تحذير! جدار قريب جداً، اتجه {safe_direction}".strip()
+                        hazard_objects.add(wall_msg)
+                        hazard_detected = True
+                        vibration_triggered = True
+
+                if hazard_objects:
                     hazards_str = " و ".join(list(hazard_objects)[:2])
                     speech_engine.speak(f"تحذير! {hazards_str}!")
                 elif speech_objects:

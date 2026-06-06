@@ -1,11 +1,12 @@
 import cv2
-import torch
 import numpy as np
 import os
+from collections import deque
 from ultralytics import YOLO
+import onnxruntime as ort
 
 class RoadVisionEngine:
-    def __init__(self, pothole_model_path="models/pothole/pothole_yolov8_final.onnx",
+    def __init__(self, pothole_model_path="best.pt",
                        stairs_model_path="models/stairs/stairs_yolov8.pt",
                        obstacle_model_path="yolov8n.pt"):
         print("Initializing RoadVision Engine (YOLO + MiDaS)...")
@@ -15,6 +16,12 @@ class RoadVisionEngine:
             if os.path.exists(engine_path):
                 print(f"🚀 Found optimized TensorRT engine: {engine_path}")
                 return engine_path
+            
+            onnx_path = base_path.replace('.pt', '.onnx')
+            if os.path.exists(onnx_path):
+                print(f"✅ Found ONNX model: {onnx_path}")
+                return onnx_path
+                
             return base_path
 
         pothole_model_path = get_best_model_path(pothole_model_path)
@@ -36,24 +43,34 @@ class RoadVisionEngine:
             self.pothole_model = None
 
         if self.pothole_model:
-            # Load MiDaS
-            print("Loading MiDaS Depth Estimation model...")
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            
-            # Use local cache for offline execution
+            # Load MiDaS via ONNX Runtime (10x faster than PyTorch CPU)
+            print("Loading MiDaS Depth Estimation model (ONNX Runtime)...")
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            cache_dir = os.path.join(base_dir, "models", "torch_hub_cache")
-            if os.path.exists(cache_dir):
-                torch.hub.set_dir(cache_dir)
-                
-            self.midas = torch.hub.load("intel-isl/MiDaS", "MiDaS_small", trust_repo=True)
-            self.midas.to(self.device)
-            self.midas.eval()
+            midas_onnx_path = os.path.join(base_dir, "models", "midas", "midas_small.onnx")
             
-            midas_transforms = torch.hub.load("intel-isl/MiDaS", "transforms", trust_repo=True)
-            self.transform = midas_transforms.small_transform
+            # Pick the best available provider (GPU > CPU)
+            available = ort.get_available_providers()
+            providers = []
+            if "CUDAExecutionProvider" in available:
+                providers.append("CUDAExecutionProvider")
+                print("  ⚡ Using CUDA GPU for MiDaS")
+            if "TensorrtExecutionProvider" in available:
+                providers.insert(0, "TensorrtExecutionProvider")
+                print("  🚀 Using TensorRT for MiDaS")
+            providers.append("CPUExecutionProvider")
+            
+            self.midas_session = ort.InferenceSession(midas_onnx_path, providers=providers)
+            self.midas_input_name = self.midas_session.get_inputs()[0].name
+            active_provider = self.midas_session.get_providers()[0]
+            print(f"  MiDaS running on: {active_provider}")
             
             print("✅ RoadVision Engine is Ready!")
+
+        # --- Severity Stabilisation ---
+        # Maps track_id -> deque of recent severity strings (last SEVERITY_WINDOW frames)
+        self.SEVERITY_WINDOW = 7
+        self._severity_history = {}   # {track_id: deque(["عميقة", "عميقة", ...])}
+        self._active_track_ids = set()  # track IDs seen this frame (for cleanup)
 
     def detect(self, frame):
         """
@@ -63,30 +80,35 @@ class RoadVisionEngine:
         if not self.pothole_model:
             return []
 
-        # 1. Depth Map Generation
+        # 1. Depth Map Generation (ONNX Runtime — no PyTorch needed)
         img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        input_batch = self.transform(img_rgb).to(self.device)
+        # MiDaS small expects 384x384 input, normalized with ImageNet stats
+        resized = cv2.resize(img_rgb, (384, 384), interpolation=cv2.INTER_CUBIC)
+        input_arr = resized.astype(np.float32) / 255.0
+        mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
+        std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+        input_arr = (input_arr - mean) / std
+        input_arr = input_arr.transpose(2, 0, 1)[np.newaxis]  # NCHW
 
-        with torch.no_grad():
-            prediction = self.midas(input_batch)
-            prediction = torch.nn.functional.interpolate(
-                prediction.unsqueeze(1),
-                size=img_rgb.shape[:2],
-                mode="bicubic",
-                align_corners=False,
-            ).squeeze()
-        
-        depth_map = prediction.cpu().numpy()
+        depth_out = self.midas_session.run(None, {self.midas_input_name: input_arr})[0]
+        # depth_out shape: (1, 384, 384) — resize back to original frame size
+        depth_map = cv2.resize(depth_out.squeeze(), (img_rgb.shape[1], img_rgb.shape[0]), interpolation=cv2.INTER_CUBIC)
         
         all_detections = []
 
         # Helper to process YOLO results
+        self._active_track_ids.clear()
         def process_results(results, is_hazard=False):
             for box in results[0].boxes:
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 conf = float(box.conf[0])
                 cls_id = int(box.cls[0])
                 label = results[0].names[cls_id]
+
+                # Extract track ID (assigned by YOLO tracker, None if not available)
+                track_id = int(box.id[0]) if box.id is not None else None
+                if track_id is not None:
+                    self._active_track_ids.add(track_id)
 
                 # Specific confidence threshold for handrail
                 if label == "handrail" and conf < 0.80:
@@ -100,12 +122,10 @@ class RoadVisionEngine:
                 if box_depth_values.size == 0:
                     continue
                 
-                median_inverse_depth = np.median(box_depth_values)
-                
-                # Import config inside function if needed or at top, wait, I'll just use config.DEPTH_SCALE_FACTOR
-                # I should import config at the top
                 from app import config
                 
+                # Use median for general distance estimation
+                median_inverse_depth = np.median(box_depth_values)
                 simulated_distance = config.DEPTH_SCALE_FACTOR / median_inverse_depth if median_inverse_depth > 0 else 99.9
 
                 # Determine Safety State
@@ -120,15 +140,6 @@ class RoadVisionEngine:
                     color = (0, 0, 255) # Red
 
                 severity_ar = ""
-                if "pothole" in label.lower():
-                    std_depth = float(np.std(box_depth_values))
-                    relative_std = std_depth / (median_inverse_depth + 1e-6)
-                    if relative_std > 0.25:
-                        severity_ar = "عميقة"
-                    elif relative_std > 0.10:
-                        severity_ar = "متوسطة"
-                    else:
-                        severity_ar = "عادية"
 
                 all_detections.append({
                     "label": label,
@@ -141,21 +152,27 @@ class RoadVisionEngine:
                     "is_hazard": is_hazard # Flag for critical objects like potholes/stairs
                 })
 
-        # 2. Run YOLO Inferences
-        pothole_results = self.pothole_model.predict(source=frame, conf=0.45, verbose=False)
-        stairs_results = self.stairs_model.predict(source=frame, conf=0.45, verbose=False)
-        obstacle_results = self.obstacle_model.predict(source=frame, conf=0.45, verbose=False)
+        # 2. Run YOLO Inferences (using tracking for stability)
+        pothole_results = self.pothole_model.track(source=frame, conf=0.45, persist=True, verbose=False, device='cpu')
+        stairs_results = self.stairs_model.track(source=frame, conf=0.45, persist=True, verbose=False, device='cpu')
+        obstacle_results = self.obstacle_model.track(source=frame, conf=0.45, persist=True, verbose=False, device='cpu')
 
         process_results(pothole_results, is_hazard=True)
         process_results(stairs_results, is_hazard=True)
         process_results(obstacle_results, is_hazard=False)
 
+        # Prune severity history for tracks no longer visible
+        stale_ids = set(self._severity_history.keys()) - self._active_track_ids
+        for sid in stale_ids:
+            del self._severity_history[sid]
+
         # 3. Wall Detection (Heuristic based on Depth Map)
-        # Check a large central Region of Interest (ROI)
+        # Only warn about a wall when it is truly close and dangerous (< 2 metres).
+        # Check a central ROI in the middle-lower half (avoids sky false positives)
         height, width = depth_map.shape
         roi_x1 = int(width * 0.25)
         roi_x2 = int(width * 0.75)
-        roi_y1 = int(height * 0.25)
+        roi_y1 = int(height * 0.30)
         roi_y2 = int(height * 0.75)
         
         wall_depth_values = depth_map[roi_y1:roi_y2, roi_x1:roi_x2]
@@ -169,8 +186,8 @@ class RoadVisionEngine:
             # Relative standard deviation to measure "flatness"
             relative_std = std_depth / (median_inverse_depth + 1e-6)
             
-            # If distance is < 4 meters and the region is relatively flat (low depth variance)
-            if simulated_distance < 4.0 and relative_std < 0.15:
+            # Only trigger wall alert when VERY close (< 2 m) AND flat surface detected
+            if simulated_distance < 2.0 and relative_std < 0.15:
                 # Calculate safe direction based on depth on the sides
                 left_roi = depth_map[roi_y1:roi_y2, 0:roi_x1]
                 right_roi = depth_map[roi_y1:roi_y2, roi_x2:width]
@@ -181,14 +198,9 @@ class RoadVisionEngine:
                 # smaller inverse depth means further away
                 safe_dir = "يساراً" if left_median < right_median else "يميناً"
 
-                # We also want to ensure that this isn't just a person detected. 
-                # A simple way is to check if it's mostly a wall, we add it as a detection.
-                if simulated_distance > 2.5:
-                    state = "WARNING"
-                    color = (0, 255, 255) # Yellow
-                else:
-                    state = "DANGER"
-                    color = (0, 0, 255) # Red
+                # At this threshold the wall is always DANGER
+                state = "DANGER"
+                color = (0, 0, 255) # Red
                     
                 all_detections.append({
                     "label": "wall",
@@ -199,7 +211,7 @@ class RoadVisionEngine:
                     "color": color,
                     "severity_ar": "جدار مسطح",
                     "safe_dir": safe_dir,
-                    "is_hazard": False # Usually not a sudden hazard like a pothole, but an obstacle
+                    "is_hazard": False
                 })
 
         return all_detections
