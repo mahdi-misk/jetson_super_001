@@ -17,10 +17,11 @@ Environment="PULSE_SERVER=unix:/run/user/1000/pulse/native"
 Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
 Environment="HOME=/home/mahdi"
 Environment="LD_LIBRARY_PATH=/home/mahdi/.local/lib/python3.10/site-packages/nvidia/cusparselt/lib"
+Environment="PYTHONPATH=/home/mahdi/jetson_super_001"
 ExecStartPre=+/usr/sbin/nvpmodel -m 0
 ExecStartPre=+/usr/bin/jetson_clocks
 ExecStartPre=/bin/sleep 10
-ExecStart=/usr/bin/python3 app/main.py
+ExecStart=/usr/bin/python3 -u app/main.py
 Restart=always
 RestartSec=5
 StandardOutput=append:/var/log/roadvision.log

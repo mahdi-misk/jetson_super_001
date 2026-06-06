@@ -143,10 +143,14 @@ def main():
                     
                     # Add label and direction for speech (all objects)
                     obj_desc = f"{label_ar} {severity_ar} {direction}".strip()
+                    # Clean up any double spaces
+                    obj_desc = " ".join(obj_desc.split())
                     
                     # Only mention potholes if they are close (WARNING or DANGER)
                     if "pothole" in label_eng.lower() and state == "SAFE":
                         pass # Ignore far away potholes for speech
+                    elif label_eng == "wall":
+                        pass # Wall speech is handled explicitly below
                     else:
                         speech_objects.add(obj_desc)
                     
@@ -159,7 +163,8 @@ def main():
                     elif state == "DANGER":
                         hazard_detected = True # Treat any close object as a hazard for speech
                         vibration_triggered = True
-                        hazard_objects.add(obj_desc)
+                        if label_eng != "wall":
+                            hazard_objects.add(obj_desc)
                         if telegram:
                             telegram.broadcast(f"⚠️ *تنبيه اقتراب!*\nالنوع: *{label_ar} {severity_ar}*\nالمسافة: *{distance:.1f} متر* ({state})\n⏰ {time.strftime('%H:%M:%S')}")
                 
@@ -180,7 +185,7 @@ def main():
                 for det in latest_detections:
                     if det["label"] == "wall" and det["state"] == "DANGER":
                         safe_direction = det.get("safe_dir", "")
-                        wall_msg = f"تحذير! جدار قريب جداً، اتجه {safe_direction}".strip()
+                        wall_msg = f"جدار قريب جداً، اتجه {safe_direction}".strip()
                         hazard_objects.add(wall_msg)
                         hazard_detected = True
                         vibration_triggered = True

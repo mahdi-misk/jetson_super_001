@@ -6,6 +6,20 @@ from collections import deque
 from ultralytics import YOLO
 import onnxruntime as ort
 
+from app import config
+
+IGNORED_LABELS = {
+    "boat", "airplane", "traffic light", "fire hydrant", "parking meter", 
+    "bench", "toilet", "sink", "potted plant", "vase", "bed", "microwave", 
+    "oven", "toaster", "suitcase", "umbrella", "tie", "hair drier", "scissors", 
+    "toothbrush", "teddy bear", "horse", "sheep", "cow", "elephant", "bear", 
+    "giraffe", "zebra", "sports ball", "tennis racket", "baseball bat", 
+    "baseball glove", "skateboard", "snowboard", "skis", "surfboard", "kite", 
+    "frisbee", "wine glass", "fork", "knife", "spoon", "bowl", "banana", 
+    "apple", "orange", "carrot", "broccoli", "sandwich", "pizza", "hot dog", 
+    "cake", "donut", "train", "clock"
+}
+
 class RoadVisionEngine:
     def __init__(self, pothole_model_path="best.pt",
                        stairs_model_path="models/stairs/stairs_yolov8.pt",
@@ -210,6 +224,9 @@ class RoadVisionEngine:
                 cls_id = int(box.cls[0])
                 label = results[0].names[cls_id]
 
+                if label in IGNORED_LABELS and conf < 0.90:
+                    continue
+
                 # Extract track ID (assigned by YOLO tracker, None if not available)
                 track_id = int(box.id[0]) if box.id is not None else None
                 if track_id is not None:
@@ -218,6 +235,17 @@ class RoadVisionEngine:
                 # Specific confidence threshold for handrail
                 if label == "handrail" and conf < 0.80:
                     continue
+                # Specific confidence threshold for potholes to reduce false positives
+                if label == "pothole":
+                    pothole_conf_thresh = getattr(config, 'POTHOLE_CONFIDENCE', 0.65)
+                    if conf < pothole_conf_thresh:
+                        continue
+
+                # Specific confidence threshold for stairs to reduce false positives
+                if label == "stairs":
+                    stairs_conf_thresh = getattr(config, 'STAIRS_CONFIDENCE', 0.71)
+                    if conf < stairs_conf_thresh:
+                        continue
 
                 # Bounding box depth
                 bx1, by1 = max(0, x1), max(0, y1)
@@ -227,22 +255,37 @@ class RoadVisionEngine:
                 if box_depth_values.size == 0:
                     continue
                 
-                from app import config
-                
-                # Use median for general distance estimation
-                median_inverse_depth = np.median(box_depth_values)
-                simulated_distance = config.DEPTH_SCALE_FACTOR / median_inverse_depth if median_inverse_depth > 0 else 99.9
+                # Use median for general distance estimation (75th percentile for potholes to get the deepest/closest part)
+                if label == "pothole":
+                    # For potholes, we care about the closest edge which has higher inverse depth
+                    inverse_depth = np.percentile(box_depth_values, 80)
+                else:
+                    inverse_depth = np.median(box_depth_values)
+                    
+                simulated_distance = config.DEPTH_SCALE_FACTOR / inverse_depth if inverse_depth > 0 else 99.9
 
                 # Determine Safety State
-                if simulated_distance > 5.0:
-                    state = "SAFE"
-                    color = (0, 255, 0) # Green
-                elif 2.0 <= simulated_distance <= 5.0:
-                    state = "WARNING"
-                    color = (0, 255, 255) # Yellow
+                if label == "pothole":
+                    # Potholes are always a hazard if they are relatively close
+                    if simulated_distance > 7.0:
+                        state = "SAFE"
+                        color = (0, 255, 0)
+                    elif simulated_distance > 3.0:
+                        state = "WARNING"
+                        color = (0, 255, 255)
+                    else:
+                        state = "DANGER"
+                        color = (0, 0, 255)
                 else:
-                    state = "DANGER"
-                    color = (0, 0, 255) # Red
+                    if simulated_distance > 5.0:
+                        state = "SAFE"
+                        color = (0, 255, 0) # Green
+                    elif 2.0 <= simulated_distance <= 5.0:
+                        state = "WARNING"
+                        color = (0, 255, 255) # Yellow
+                    else:
+                        state = "DANGER"
+                        color = (0, 0, 255) # Red
 
                 severity_ar = ""
 
@@ -272,51 +315,62 @@ class RoadVisionEngine:
             del self._severity_history[sid]
 
         # 3. Wall Detection (Heuristic based on Depth Map)
-        # Only warn about a wall when it is truly close and dangerous (< 2 metres).
-        # Check a central ROI in the middle-lower half (avoids sky false positives)
+        # Check central Region of Interest (ROI) avoiding the ground
         height, width = depth_map.shape
-        roi_x1 = int(width * 0.25)
-        roi_x2 = int(width * 0.75)
-        roi_y1 = int(height * 0.30)
-        roi_y2 = int(height * 0.75)
+        roi_x1 = int(width * 0.20)
+        roi_x2 = int(width * 0.80)
+        roi_y1 = int(height * 0.15)
+        roi_y2 = int(height * 0.50) # Avoid the bottom 50% where the ground is to reduce false ground detections
         
         wall_depth_values = depth_map[roi_y1:roi_y2, roi_x1:roi_x2]
         if wall_depth_values.size > 0:
+            # Use 75th percentile to represent the closer dominant parts of the wall
+            close_inverse_depth = np.percentile(wall_depth_values, 75)
             median_inverse_depth = np.median(wall_depth_values)
             std_depth = float(np.std(wall_depth_values))
             
-            from app import config
-            simulated_distance = config.DEPTH_SCALE_FACTOR / median_inverse_depth if median_inverse_depth > 0 else 99.9
+            simulated_distance = config.DEPTH_SCALE_FACTOR / close_inverse_depth if close_inverse_depth > 0 else 99.9
             
             # Relative standard deviation to measure "flatness"
             relative_std = std_depth / (median_inverse_depth + 1e-6)
             
-            # Only trigger wall alert when VERY close (< 2 m) AND flat surface detected
-            if simulated_distance < 2.0 and relative_std < 0.15:
+            # Check color uniformity (a wall usually has a uniform color/texture)
+            color_roi = frame[roi_y1:roi_y2, roi_x1:roi_x2]
+            color_std = 0.0
+            if color_roi.size > 0:
+                gray_roi = cv2.cvtColor(color_roi, cv2.COLOR_BGR2GRAY)
+                color_std = float(np.std(gray_roi))
+
+            # Tighten relative_std to ensure it's a flat surface, reducing false positives from objects
+            # Also require color uniformity. Increased to 80.0 to handle noise in dark environments.
+            if simulated_distance < 4.0 and relative_std < 0.25 and color_std < 80.0:
                 # Calculate safe direction based on depth on the sides
                 left_roi = depth_map[roi_y1:roi_y2, 0:roi_x1]
                 right_roi = depth_map[roi_y1:roi_y2, roi_x2:width]
                 
-                left_median = np.median(left_roi) if left_roi.size > 0 else 99.9
-                right_median = np.median(right_roi) if right_roi.size > 0 else 99.9
+                left_median = np.median(left_roi) if left_roi.size > 0 else 0
+                right_median = np.median(right_roi) if right_roi.size > 0 else 0
                 
                 # smaller inverse depth means further away
                 safe_dir = "يساراً" if left_median < right_median else "يميناً"
 
-                # At this threshold the wall is always DANGER
-                state = "DANGER"
-                color = (0, 0, 255) # Red
+                if simulated_distance > 2.5:
+                    state = "WARNING"
+                    color = (0, 255, 255) # Yellow
+                else:
+                    state = "DANGER"
+                    color = (0, 0, 255) # Red
                     
                 all_detections.append({
                     "label": "wall",
-                    "confidence": max(0.4, 1.0 - (relative_std * 5)), # Pseudo-confidence
+                    "confidence": max(0.5, 1.0 - relative_std),
                     "bbox": [roi_x1, roi_y1, roi_x2, roi_y2],
                     "distance": simulated_distance,
                     "state": state,
                     "color": color,
-                    "severity_ar": "جدار مسطح",
+                    "severity_ar": "مسطح",
                     "safe_dir": safe_dir,
-                    "is_hazard": False
+                    "is_hazard": True
                 })
 
         return all_detections

@@ -30,5 +30,8 @@ TELEGRAM_SEND_INTERVAL = 0  # 0 to disable auto sensor updates (only send on col
 USE_POTHOLE_DETECTION = True
 POTHOLE_ROBOFLOW_API_KEY = "4lrHjIQ17hJryjEYNrfk"
 POTHOLE_ROBOFLOW_MODEL_ID = "pothole-vhmow/2" # Roboflow model ID
-POTHOLE_CONFIDENCE = 0.5                # Minimum confidence threshold (0.0 - 1.0)
+POTHOLE_CONFIDENCE = 0.65               # Minimum confidence threshold (0.0 - 1.0)
 POTHOLE_SNAPSHOT_COOLDOWN = 5           # Seconds between saving snapshots
+
+# --- Stairs Detection Settings ---
+STAIRS_CONFIDENCE = 0.71                # Minimum confidence threshold (0.0 - 1.0)
